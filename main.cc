@@ -145,22 +145,58 @@ public:
 
 
 class Pane_detail : public pane {
+    ssize_t cursor_index;
+    size_t  list_start_index;
 public:
+    std::vector<std::string> lines;
+
+    ssize_t get_cursor() { return cursor_index; }
+    void dec_cursor()
+    {
+        if (cursor_index-1 < list_start_index) scroll_up();
+        if (get_cursor()-1 >= 0) cursor_index--;
+    }
+    void inc_cursor()
+    {
+        if (cursor_index+1-list_start_index >= h) scroll_down();
+        if (get_cursor()+1 < lines.size()) cursor_index++;
+    }
+    void scroll_up()   { list_start_index --; }
+    void scroll_down() { list_start_index ++; }
+
     Pane_detail(size_t ix, size_t iy, size_t iw, size_t ih,
             slankdev::ncurses& scr) : pane(ix, iy, iw, ih, scr) {}
     void print_packet_detail(Packet* packet)
     {
+        char str[1000];
+        sprintf(str, "Packet Detail");
+        lines.push_back(str);
+        sprintf(str, " + number : %zd ", packet->number);
+        lines.push_back(str);
+        sprintf(str, " + pointer: %p", packet->buf);
+        lines.push_back(str);
+        sprintf(str, " + length : %zd", packet->len);
+        lines.push_back(str);
+        sprintf(str, " + time   : %ld", packet->time);
+        lines.push_back(str);
+    }
+    void refresh()
+    {
         current_x = x;
         current_y = y;
-        println("Packet Detail");
-        println(" + number : %zd ", packet->number);
-        println(" + pointer: %p", packet->buf);
-        println(" + length : %zd", packet->len);
-        println(" + time   : %ld", packet->time);
+        println("Detail pane");
+        for (size_t i=0, c=0; i<lines.size() && c<h; i++, c++) {
+            if (i == get_cursor())
+                println_hl("%s", lines[i].c_str());
+            else
+                println("%s", lines[i].c_str());
+        }
+        for (size_t i=0; i<h-lines.size(); i++) {
+            for (size_t c=0; c<w; c++) print(" ");
+            println("");
+        }
     }
-    void refresh() {}
 };
-
 
 
 class Pane_binary : public pane {
@@ -310,52 +346,28 @@ public:
     void charnge_cstate()
     {
         switch (cstate) {
-            case LIST:
-                cstate = DETAIL;
-                break;
-            case DETAIL:
-                cstate = BINARY;
-                break;
-            case BINARY:
-                cstate = LIST;
-                break;
-            default :
-                throw slankdev::exception("UNKNOWN state");
-                break;
+            case LIST  : cstate = DETAIL; break;
+            case DETAIL: cstate = BINARY; break;
+            case BINARY: cstate = LIST  ; break;
+            default : throw slankdev::exception("UNKNOWN state");
         }
     }
     void press_j()
     {
         switch (cstate) {
-            case LIST:
-                pane_list.inc_cursor();
-                break;
-            case DETAIL:
-                break;
-            case BINARY:
-                pane_binary.inc_cursor();
-                break;
-            defaut:
-                throw slankdev::exception("UNknown state");
-                break;
-
+            case LIST  : pane_list.inc_cursor()  ; break;
+            case DETAIL: pane_detail.inc_cursor(); break;
+            case BINARY: pane_binary.inc_cursor(); break;
+            defaut: throw slankdev::exception("UNknown state");
         }
     }
     void press_k()
     {
         switch (cstate) {
-            case LIST:
-                pane_list.dec_cursor();
-                break;
-            case DETAIL:
-                break;
-            case BINARY:
-                pane_binary.dec_cursor();
-                break;
-            defaut:
-                throw slankdev::exception("UNknown state");
-                break;
-
+            case LIST  : pane_list.dec_cursor()  ; break;
+            case DETAIL: pane_detail.dec_cursor(); break;
+            case BINARY: pane_binary.dec_cursor(); break;
+            defaut: throw slankdev::exception("UNknown state");
         }
     }
     void press_enter()
