@@ -114,13 +114,13 @@ public:
     }
     void scroll_up()   { list_start_index --; }
     void scroll_down() { list_start_index ++; }
-    Pane_list(size_t ix, size_t iy, size_t iw, size_t ih, slankdev::ncurses& scr) :
-        pane(ix, iy, iw, ih, scr), cursor_index(0), list_start_index(0) {}
+    Pane_list(size_t ix, size_t iy, size_t iw, size_t ih,
+            slankdev::ncurses& scr) : pane(ix, iy, iw, ih, scr),
+            cursor_index(0), list_start_index(0) {}
     void push_packet(const void* packet, struct pcap_pkthdr* hdr)
     {
         static int number = 0;
-        Packet pack(packet, hdr->len, hdr->ts.tv_sec, number++);
-        packets.push_back(pack);
+        packets.emplace_back(packet, hdr->len, hdr->ts.tv_sec, number++);
     }
     void refresh()
     {
@@ -146,10 +146,35 @@ public:
 
 class Pane_detail : public pane {
 public:
-    Pane_detail(size_t ix, size_t iy, size_t iw, size_t ih, slankdev::ncurses& scr) :
-        pane(ix, iy, iw, ih, scr) {}
-    void hex(const void *buffer, size_t bufferlen)
+    Pane_detail(size_t ix, size_t iy, size_t iw, size_t ih,
+            slankdev::ncurses& scr) : pane(ix, iy, iw, ih, scr) {}
+    void print_packet_detail(Packet* packet)
     {
+        current_x = x;
+        current_y = y;
+        println("Packet Detail");
+        println(" + number : %zd ", packet->number);
+        println(" + pointer: %p", packet->buf);
+        println(" + length : %zd", packet->len);
+        println(" + time   : %ld", packet->time);
+
+
+    }
+    void refresh() {}
+};
+
+
+
+class Pane_binary : public pane {
+public:
+    Pane_binary(size_t ix, size_t iy, size_t iw, size_t ih,
+            slankdev::ncurses& scr) : pane(ix, iy, iw, ih, scr) {}
+    void hex(Packet* packet)
+    {
+        current_x = x;
+        current_y = y;
+        const void* buffer = packet->buf;
+        size_t bufferlen   = packet->len;
         println("[%p] length=%zd", buffer, bufferlen);
 
         const uint8_t *data = reinterpret_cast<const uint8_t*>(buffer);
@@ -180,19 +205,7 @@ public:
             data += n;
         }
     }
-    void print_packet_detail(Packet* packet)
-    {
-        current_x = x;
-        current_y = y;
-        println("Packet Detail");
-        println(" + number : %zd ", packet->number);
-        println(" + pointer: %p", packet->buf);
-        println(" + length : %zd", packet->len);
-        println(" + time   : %ld", packet->time);
-
-
-        hex(packet->buf, packet->len);
-    }
+    void refresh() {}
 };
 
 
@@ -209,7 +222,8 @@ class Statusline {
     const size_t w;
     const cursor_state& state;
 public:
-    Statusline(size_t ix, size_t iy, size_t iw, cursor_state& c) : x(ix), y(iy), w(iw), state(c) {}
+    Statusline(size_t ix, size_t iy, size_t iw, cursor_state& c)
+        : x(ix), y(iy), w(iw), state(c) {}
     const char* state2str(cursor_state s)
     {
         switch (s) {
@@ -225,6 +239,9 @@ public:
     }
 };
 
+size_t a(size_t h) { return (h-1) % 3; }
+size_t m(size_t h) { return ((h-1)-((h-1)%3))/3; }
+#define H screen.geth()
 
 class display {
     slankdev::ncurses screen;
@@ -233,16 +250,19 @@ class display {
 public:
     Pane_list   pane_list;
     Pane_detail pane_detail;
+    Pane_binary pane_binary;
     Statusline statusline;
 
     display() :
         cstate(LIST),
-        pane_list(0,0,screen.getw(),screen.geth()/2, screen),
-        pane_detail(0, screen.geth()/2+1, screen.getw(), screen.geth()/2, screen),
-        statusline(0, screen.geth()-1, screen.getw(), cstate)
+        pane_list  (0, 0          , screen.getw(), a(H)+m(H), screen),
+        pane_detail(0, a(H)+m(H)  , screen.getw(), m(H)     , screen),
+        pane_binary(0, a(H)+2*m(H), screen.getw(), m(H)     , screen),
+        statusline (0, a(H)+3*m(H), screen.getw(), cstate)
     {
         char errbuf[PCAP_ERRBUF_SIZE];
         handle = pcap_open_live("lo", BUFSIZ, 0, 0, errbuf);
+        // handle = pcap_open_offline("in.pcap", errbuf);
         if (handle == NULL) {
             throw slankdev::exception("pcap_open_live");
         }
@@ -303,10 +323,13 @@ public:
     {
         switch (cstate) {
             case LIST:
+            {
                 if (pane_list.packets.empty()) return;
-                pane_detail.print_packet_detail(
-                        &pane_list.packets[pane_list.get_cursor()]);
+                Packet* pack = &pane_list.packets[pane_list.get_cursor()];
+                pane_detail.print_packet_detail(pack);
+                pane_binary.hex(pack);
                 break;
+            }
             case DETAIL:
                 break;
             case BINARY:
@@ -376,10 +399,16 @@ public:
                     }
                 }
             }
-            pane_list.refresh();
-            statusline.refresh();
-            screen.refresh();
+            refresh();
         }
+    }
+    void refresh()
+    {
+        pane_list.refresh();
+        pane_detail.refresh();
+        pane_binary.refresh();
+        statusline.refresh();
+        screen.refresh();
     }
 };
 
