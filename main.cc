@@ -203,6 +203,29 @@ enum cursor_state {
 };
 
 
+class Statusline {
+    const size_t x;
+    const size_t y;
+    const size_t w;
+    const cursor_state& state;
+public:
+    Statusline(size_t ix, size_t iy, size_t iw, cursor_state& c) : x(ix), y(iy), w(iw), state(c) {}
+    const char* state2str(cursor_state s)
+    {
+        switch (s) {
+            case LIST:   return "LIST   ";
+            case DETAIL: return "DETAIL ";
+            case BINARY: return "BINARY ";
+            default :    return "UNKNOWN";
+        }
+    }
+    void refresh()
+    {
+        mvprintw(y, x, "[CUISHARK] pane=%s", state2str(state));
+    }
+};
+
+
 class display {
     slankdev::ncurses screen;
     pcap_t *handle;
@@ -210,11 +233,13 @@ class display {
 public:
     Pane_list   pane_list;
     Pane_detail pane_detail;
+    Statusline statusline;
 
     display() :
         cstate(LIST),
         pane_list(0,0,screen.getw(),screen.geth()/2, screen),
-        pane_detail(0, screen.geth()/2+1, screen.getw(), screen.geth()/2, screen)
+        pane_detail(0, screen.geth()/2+1, screen.getw(), screen.geth()/2, screen),
+        statusline(0, screen.geth()-1, screen.getw(), cstate)
     {
         char errbuf[PCAP_ERRBUF_SIZE];
         handle = pcap_open_live("lo", BUFSIZ, 0, 0, errbuf);
@@ -278,6 +303,7 @@ public:
     {
         switch (cstate) {
             case LIST:
+                if (pane_list.packets.empty()) return;
                 pane_detail.print_packet_detail(
                         &pane_list.packets[pane_list.get_cursor()]);
                 break;
@@ -291,19 +317,26 @@ public:
 
         }
     }
-    void press_question()
+    void view_help()
     {
-        switch (cstate) {
-            case LIST:
-            case DETAIL:
-            case BINARY:
-                exit(0); // TODO imple this
-                break;
-            defaut:
-                throw slankdev::exception("UNknown state");
-                break;
-
-        }
+        size_t x = 0;
+        size_t y = 0;
+        screen.mvprintw(y++, x, "                                                    ");
+        screen.mvprintw(y++, x, "    CuiShark version 0.0                            ");
+        screen.mvprintw(y++, x, "    Copyright 2017-2020 Hiroki SHIROKURA.           ");
+        screen.mvprintw(y++, x, "                                                    ");
+        screen.mvprintw(y++, x, "    Avalable Keyboard commands are below.           ");
+        screen.mvprintw(y++, x, "    These are Vi-like key-bind because I'm vimmer.  ");
+        screen.mvprintw(y++, x, "                                                    ");
+        screen.mvprintw(y++, x, "    Commands                                        ");
+        screen.mvprintw(y++, x, "    j      :  down                                  ");
+        screen.mvprintw(y++, x, "    k      :  up                                    ");
+        screen.mvprintw(y++, x, "    tab    :  switch pane                           ");
+        screen.mvprintw(y++, x, "    enter  :  select                                ");
+        screen.mvprintw(y++, x, "    ?      :  view help                             ");
+        screen.mvprintw(y++, x, "    C-c    :  exit                                  ");
+        screen.mvprintw(y++, x, "                                                    ");
+        screen.getchar();
     }
     void dispatch()
     {
@@ -338,12 +371,13 @@ public:
                             press_enter();
                             break;
                         case '?':
-                            press_question();
+                            view_help();
                             break;
                     }
                 }
             }
             pane_list.refresh();
+            statusline.refresh();
             screen.refresh();
         }
     }
