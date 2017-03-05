@@ -157,8 +157,6 @@ public:
         println(" + pointer: %p", packet->buf);
         println(" + length : %zd", packet->len);
         println(" + time   : %ld", packet->time);
-
-
     }
     void refresh() {}
 };
@@ -166,46 +164,85 @@ public:
 
 
 class Pane_binary : public pane {
+    ssize_t cursor_index;
+    size_t  list_start_index;
 public:
+    std::vector<std::string> lines;
+
+    ssize_t get_cursor() { return cursor_index; }
+    void dec_cursor()
+    {
+        if (cursor_index-1 < list_start_index) scroll_up();
+        if (get_cursor()-1 >= 0) cursor_index--;
+    }
+    void inc_cursor()
+    {
+        if (cursor_index+1-list_start_index >= h) scroll_down();
+        if (get_cursor()+1 < lines.size()) cursor_index++;
+    }
+    void scroll_up()   { list_start_index --; }
+    void scroll_down() { list_start_index ++; }
+
+
     Pane_binary(size_t ix, size_t iy, size_t iw, size_t ih,
             slankdev::ncurses& scr) : pane(ix, iy, iw, ih, scr) {}
     void hex(Packet* packet)
     {
-        current_x = x;
-        current_y = y;
+        lines.clear();
+
         const void* buffer = packet->buf;
         size_t bufferlen   = packet->len;
-        println("[%p] length=%zd", buffer, bufferlen);
+        char str[1000];
 
         const uint8_t *data = reinterpret_cast<const uint8_t*>(buffer);
         size_t row = 0;
+        std::string line;
         while (bufferlen > 0) {
-            print("%04zx:   ", row);
+            line.clear();
+
+            sprintf(str, " %04zx:   ", row);
+            line += str;
 
             size_t n;
             if (bufferlen < 16) n = bufferlen;
             else                n = 16;
 
             for (size_t i = 0; i < n; i++) {
-                if (i == 8) print(" ");
-                print(" %02x", data[i]);
+                if (i == 8) { line += " "; }
+                sprintf(str, " %02x", data[i]);
+                line += str;
             }
-            for (size_t i = n; i < 16; i++) {
-                print("   ");
-            }
-            print("   ");
+            for (size_t i = n; i < 16; i++) { line += "   "; }
+            line += "   ";
             for (size_t i = 0; i < n; i++) {
-                if (i == 8) print("  ");
+                if (i == 8) { line += "  "; }
                 uint8_t c = data[i];
                 if (!(0x20 <= c && c <= 0x7e)) c = '.';
-                print("%c", c);
+                sprintf(str, "%c", c);
+                line += str;
             }
             println("");
+            lines.push_back(line);
             bufferlen -= n;
             data += n;
+            row  += n;
         }
     }
-    void refresh() {}
+    void refresh()
+    {
+        current_x = x;
+        current_y = y;
+        for (size_t i=0, c=0; i<lines.size() && c<h; i++, c++) {
+            if (i == get_cursor())
+                println_hl("%s", lines[i].c_str());
+            else
+                println("%s", lines[i].c_str());
+        }
+        for (size_t i=0; i<h-lines.size(); i++) {
+            for (size_t c=0; c<w; c++) print(" ");
+            println("");
+        }
+    }
 };
 
 
@@ -296,6 +333,7 @@ public:
             case DETAIL:
                 break;
             case BINARY:
+                pane_binary.inc_cursor();
                 break;
             defaut:
                 throw slankdev::exception("UNknown state");
@@ -312,6 +350,7 @@ public:
             case DETAIL:
                 break;
             case BINARY:
+                pane_binary.dec_cursor();
                 break;
             defaut:
                 throw slankdev::exception("UNknown state");
