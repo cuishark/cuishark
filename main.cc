@@ -184,7 +184,6 @@ public:
     {
         current_x = x;
         current_y = y;
-        println("Detail pane");
         for (size_t i=0, c=0; i<lines.size() && c<h; i++, c++) {
             if (i == get_cursor())
                 println_hl("%s", lines[i].c_str());
@@ -328,10 +327,10 @@ public:
 
     display() :
         cstate(LIST),
-        pane_list  (0, 0          , screen.getw(), a(H)+m(H), screen),
-        pane_detail(0, a(H)+m(H)  , screen.getw(), m(H)     , screen),
-        pane_binary(0, a(H)+2*m(H), screen.getw(), m(H)     , screen),
-        statusline (0, a(H)+3*m(H), screen.getw(), cstate)
+        pane_list  (0, 0            , screen.getw(), a(H)+m(H), screen),
+        pane_detail(0, a(H)+m(H)+1  , screen.getw(), m(H)     , screen),
+        pane_binary(0, a(H)+2*m(H)+1, screen.getw(), m(H)     , screen),
+        statusline (0, a(H)+3*m(H)  , screen.getw(), cstate)
     {
         char errbuf[PCAP_ERRBUF_SIZE];
         handle = pcap_open_live("lo", BUFSIZ, 0, 0, errbuf);
