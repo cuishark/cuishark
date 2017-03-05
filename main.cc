@@ -18,22 +18,27 @@
 
 class Packet {
 public:
-    uint8_t* ptr;
+    uint8_t buf[2000];
     size_t   len;
     uint64_t time;
+    size_t   number;
 
-    Packet(const void* p, size_t l, uint64_t t) : ptr((uint8_t*)p), len(l), time(t) {}
-    std::string line(int number)
+    Packet(const void* p, size_t l, uint64_t t, size_t n) :
+        len(l), time(t), number(n)
+    {
+        memcpy(buf, p, len);
+    }
+    std::string line()
     {
         using namespace slankdev;
         std::string source;
         std::string dest;
         std::string proto;
 
-        ether* eth = reinterpret_cast<ether*>(ptr);
+        ether* eth = reinterpret_cast<ether*>(buf);
 
         char str[1000];
-        sprintf(str, "%5d %10ld %-20s %-20s %6s %5zd %-10s" , number, time,
+        sprintf(str, "%5zd %-13ld %-20s %-20s %6s %5zd %-10s" , number, time,
                 eth->src.to_string().c_str(),
                 eth->dst.to_string().c_str(),
                 "protocol", len, "summry");
@@ -55,19 +60,28 @@ public:
     const size_t h;
     pane(size_t ix, size_t iy, size_t iw, size_t ih, slankdev::ncurses& scr) :
         x(ix), y(iy), w(iw), h(ih), current_x(ix), current_y(iy), screen(scr) {}
-    void println(const char* str)
+    template <class... Arg>
+    void println(const char* fmt, Arg... arg)
     {
-        screen.mvprintw(current_y++, current_x, "%s", str);
+        screen.mvprintw(current_y++, current_x, fmt, arg...);
         current_x = x;
     }
-    void println_hl(const char* str)
+    template <class... Arg>
+    void println_hl(const char* fmt, Arg... arg)
     {
         attron(A_REVERSE);
-        screen.mvprintw(current_y++, current_x, "%s", str);
+        screen.mvprintw(current_y++, current_x, fmt, arg...);
         current_x = x;
         attroff(A_REVERSE);
     }
-    void print(const char* str) { screen.mvprintw(current_y, current_x, "%s", str); }
+    template <class... Arg>
+    void print(const char* fmt, Arg... arg)
+    {
+        char str[1000];
+        sprintf(str, fmt, arg...);
+        size_t len = strlen(str);
+        screen.mvprintw(current_y, current_x+=len, fmt, arg...);
+    }
     void putc(char c)
     {
         if (c == '\n') {
@@ -83,56 +97,124 @@ public:
 
 
 class Pane_list : public pane {
-    std::vector<Packet> packets;
+    ssize_t cursor_index;
+    size_t  list_start_index;
 public:
-    size_t cursor_index;
-    Pane_list(size_t ix, size_t iy, size_t iw, size_t ih, slankdev::ncurses& scr) :
-        pane(ix, iy, iw, ih, scr), cursor_index(0)
+    std::vector<Packet> packets;
+    ssize_t get_cursor() { return cursor_index; }
+    void dec_cursor()
     {
+        if (cursor_index-1 < list_start_index) scroll_up();
+        if (get_cursor()-1 >= 0) cursor_index--;
     }
+    void inc_cursor()
+    {
+        if (cursor_index+1-list_start_index >= h) scroll_down();
+        if (get_cursor()+1 < packets.size()) cursor_index++;
+    }
+    void scroll_up()   { list_start_index --; }
+    void scroll_down() { list_start_index ++; }
+    Pane_list(size_t ix, size_t iy, size_t iw, size_t ih, slankdev::ncurses& scr) :
+        pane(ix, iy, iw, ih, scr), cursor_index(0), list_start_index(0) {}
     void push_packet(const void* packet, struct pcap_pkthdr* hdr)
     {
         static int number = 0;
-        Packet pack(packet, hdr->len, hdr->ts.tv_sec);
+        Packet pack(packet, hdr->len, hdr->ts.tv_sec, number++);
         packets.push_back(pack);
     }
     void refresh()
     {
         current_x = x;
         current_y = y;
-        char str[1000];
-        sprintf(str, "%-5s %-10s %-20s %-20s %-6s %-5s %-10s",
+        println("%-5s %-13s %-20s %-20s %-6s %-5s %-10s",
                 "No.", "Time", "Source", "Destination",
                 "Protocol", "Len", "Info");
-        println(str);
 
-        size_t start_idx = cursor_index;
+        size_t start_idx = list_start_index;
         for (size_t i=start_idx, c=0; i<packets.size() && c<h; i++, c++) {
-            if (i == cursor_index)
-                println_hl(packets[i].line(i).c_str());
+            if (i == get_cursor())
+                println_hl(packets[i].line().c_str());
             else
-                println(packets[i].line(i).c_str());
+                println(packets[i].line().c_str());
         }
     }
 };
+
+
+
+
 
 class Pane_detail : public pane {
 public:
     Pane_detail(size_t ix, size_t iy, size_t iw, size_t ih, slankdev::ncurses& scr) :
         pane(ix, iy, iw, ih, scr) {}
+    void hex(const void *buffer, size_t bufferlen)
+    {
+        println("[%p] length=%zd", buffer, bufferlen);
+
+        const uint8_t *data = reinterpret_cast<const uint8_t*>(buffer);
+        size_t row = 0;
+        while (bufferlen > 0) {
+            print("%04zx:   ", row);
+
+            size_t n;
+            if (bufferlen < 16) n = bufferlen;
+            else                n = 16;
+
+            for (size_t i = 0; i < n; i++) {
+                if (i == 8) print(" ");
+                print(" %02x", data[i]);
+            }
+            for (size_t i = n; i < 16; i++) {
+                print("   ");
+            }
+            print("   ");
+            for (size_t i = 0; i < n; i++) {
+                if (i == 8) print("  ");
+                uint8_t c = data[i];
+                if (!(0x20 <= c && c <= 0x7e)) c = '.';
+                print("%c", c);
+            }
+            println("");
+            bufferlen -= n;
+            data += n;
+        }
+    }
+    void print_packet_detail(Packet* packet)
+    {
+        current_x = x;
+        current_y = y;
+        println("Packet Detail");
+        println(" + number : %zd ", packet->number);
+        println(" + pointer: %p", packet->buf);
+        println(" + length : %zd", packet->len);
+        println(" + time   : %ld", packet->time);
+
+
+        hex(packet->buf, packet->len);
+    }
+};
+
+
+enum cursor_state {
+    LIST,
+    DETAIL,
+    BINARY,
 };
 
 
 class display {
     slankdev::ncurses screen;
     pcap_t *handle;
+    cursor_state cstate;
 public:
     Pane_list   pane_list;
     Pane_detail pane_detail;
 
     display() :
+        cstate(LIST),
         pane_list(0,0,screen.getw(),screen.geth()/2, screen),
-        pane_detail(0, screen.geth()/2, screen.getw(), screen.geth()/2, screen)
+        pane_detail(0, screen.geth()/2+1, screen.getw(), screen.geth()/2, screen)
     {
         char errbuf[PCAP_ERRBUF_SIZE];
         handle = pcap_open_live("lo", BUFSIZ, 0, 0, errbuf);
@@ -143,6 +225,86 @@ public:
         screen.refresh();
     }
     ~display() { pcap_close(handle); }
+    void charnge_cstate()
+    {
+        switch (cstate) {
+            case LIST:
+                cstate = DETAIL;
+                break;
+            case DETAIL:
+                cstate = BINARY;
+                break;
+            case BINARY:
+                cstate = LIST;
+                break;
+            default :
+                throw slankdev::exception("UNKNOWN state");
+                break;
+        }
+    }
+    void press_j()
+    {
+        switch (cstate) {
+            case LIST:
+                pane_list.inc_cursor();
+                break;
+            case DETAIL:
+                break;
+            case BINARY:
+                break;
+            defaut:
+                throw slankdev::exception("UNknown state");
+                break;
+
+        }
+    }
+    void press_k()
+    {
+        switch (cstate) {
+            case LIST:
+                pane_list.dec_cursor();
+                break;
+            case DETAIL:
+                break;
+            case BINARY:
+                break;
+            defaut:
+                throw slankdev::exception("UNknown state");
+                break;
+
+        }
+    }
+    void press_enter()
+    {
+        switch (cstate) {
+            case LIST:
+                pane_detail.print_packet_detail(
+                        &pane_list.packets[pane_list.get_cursor()]);
+                break;
+            case DETAIL:
+                break;
+            case BINARY:
+                break;
+            defaut:
+                throw slankdev::exception("UNknown state");
+                break;
+
+        }
+    }
+    void press_question()
+    {
+        switch (cstate) {
+            case LIST:
+            case DETAIL:
+            case BINARY:
+                exit(0); // TODO imple this
+                break;
+            defaut:
+                throw slankdev::exception("UNknown state");
+                break;
+
+        }
+    }
     void dispatch()
     {
         struct pollfd fds[2];
@@ -164,15 +326,21 @@ public:
                     int c = screen.getchar();
                     switch (c) {
                         case 'j':
-                            if (pane_list.cursor_index + 1 < pane_list.h)
-                                pane_list.cursor_index ++;
+                            press_j();
                             break;
                         case 'k':
-                            if (pane_list.cursor_index - 1 > 0)
-                            pane_list.cursor_index --;
+                            press_k();
+                            break;
+                        case '\t':
+                            charnge_cstate();
+                            break;
+                        case '\n':
+                            press_enter();
+                            break;
+                        case '?':
+                            press_question();
                             break;
                     }
-                    pane_detail.putc(c);
                 }
             }
             pane_list.refresh();
