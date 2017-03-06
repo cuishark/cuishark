@@ -97,11 +97,12 @@ public:
             {
                 if (pane_list.packets.empty()) return;
                 Packet* pack = &pane_list.packets[pane_list.get_cursor()];
-                pane_detail.print_packet_detail(pack);
+                pane_detail.add_analyze_result(pack);
                 pane_binary.hex(pack);
                 break;
             }
             case DETAIL:
+                pane_detail.press_enter();
                 break;
             case BINARY:
                 break;

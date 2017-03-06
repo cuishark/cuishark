@@ -34,7 +34,17 @@ public:
         char str[1000];
         sprintf(str, fmt, arg...);
         size_t len = strlen(str);
-        screen.mvprintw(current_y, current_x+=len, fmt, arg...);
+        screen.mvprintw(current_y, current_x, fmt, arg...);
+        current_x += len;
+    }
+    void clear_screen()
+    {
+        for (size_t i=0; i<h; i++) {
+            for (size_t j=0; j<w-1; j++) {
+                print(" ");
+            }
+            println("");
+        }
     }
     void putc(char c)
     {
@@ -97,6 +107,9 @@ public:
 
 
 
+
+
+
 class Protocol {
     size_t analyze_icmp(const void* pkt, size_t len)
     {}
@@ -131,11 +144,127 @@ public:
 };
 
 
+
+class line {
+public:
+    virtual ~line() {}
+    virtual std::string to_string() = 0;
+};
+
+
+class staticline : public line {
+    const std::string msg;
+public:
+    staticline(const char* str) : msg(str) {}
+    std::string to_string() override { return msg; }
+};
+
+
+
+
+enum State {
+    OPEN,
+    CLOSE,
+};
+
+class Protoblock : public line {
+    State state;
+public:
+    std::vector<line*> childs;
+    State get_state() const { return state; }
+
+    Protoblock() : state(OPEN) {}
+    void openclose()
+    {
+        switch (state) {
+            case OPEN:
+                state = CLOSE;
+                break;
+            case CLOSE:
+                state = OPEN;
+                break;
+            default:
+                throw slankdev::exception("UNKNOWN state");
+        }
+    }
+};
+
+
+
+class Ethernetblock : public Protoblock {
+public:
+    Ethernetblock(const void* ptr, size_t len, size_t* headerlen)
+    {
+        using namespace slankdev;
+        childs.push_back(new staticline("dst"));
+        childs.push_back(new staticline("src"));
+        childs.push_back(new staticline("type"));
+        *headerlen = sizeof(ether);
+    }
+    std::string to_string() { return "Ethernet"; }
+};
+
+class IP : public Protoblock {
+public:
+    IP(const void* ptr, size_t len, size_t* headerlen)
+    {
+        using namespace slankdev;
+        childs.push_back(new staticline("src address"));
+        childs.push_back(new staticline("dst address"));
+        childs.push_back(new staticline("protocol"));
+        *headerlen = (20);
+    }
+    std::string to_string() { return "Internet Protocol version 4"; }
+};
+
+
+class ARP : public Protoblock {
+public:
+    ARP(const void* ptr, size_t len, size_t* headerlen)
+    {
+        using namespace slankdev;
+        childs.push_back(new staticline("Operation"));
+        childs.push_back(new staticline("Source Hw address"));
+        childs.push_back(new staticline("Target Hw address"));
+        childs.push_back(new staticline("Source Proto address"));
+        childs.push_back(new staticline("Target Proto address"));
+        *headerlen = 0;
+    }
+    std::string to_string() { return "Adress Resolution Protocol"; }
+};
+
+
+class IPv6 : public Protoblock {
+public:
+    IPv6(const void* ptr, size_t len, size_t* headerlen)
+    {
+        using namespace slankdev;
+        childs.push_back(new staticline("src address"));
+        childs.push_back(new staticline("dst address"));
+        childs.push_back(new staticline("protocol"));
+        *headerlen = 0;
+        throw slankdev::exception("IPV6 is not support yet.");
+    }
+    std::string to_string() { return "Internet Protocol version 6"; }
+};
+
+
+class Binary : public Protoblock {
+public:
+    Binary()
+    {
+        using namespace slankdev;
+        childs.push_back(new staticline("raw data"));
+    }
+    std::string to_string() { return "Binary Data"; }
+};
+
+
 class Pane_detail : public pane {
     ssize_t cursor_index;
     size_t  list_start_index;
 public:
-    std::vector<std::string> lines;
+    std::vector<Protoblock*> lines;
 
     ssize_t get_cursor() { return cursor_index; }
     void dec_cursor()
@@ -152,36 +281,70 @@ public:
     void scroll_down() { list_start_index ++; }
 
     Pane_detail(size_t ix, size_t iy, size_t iw, size_t ih,
-            slankdev::ncurses& scr) : pane(ix, iy, iw, ih, scr) {}
-    void print_packet_detail(Packet* packet)
+            slankdev::ncurses& scr) : pane(ix, iy, iw, ih, scr), cursor_index(0) {}
+    void add_analyze_result(Packet* pack)
     {
-        char str[1000];
-        sprintf(str, "Packet Detail");
-        lines.push_back(str);
-        sprintf(str, " + number : %zd ", packet->number);
-        lines.push_back(str);
-        sprintf(str, " + pointer: %p", packet->buf);
-        lines.push_back(str);
-        sprintf(str, " + length : %zd", packet->len);
-        lines.push_back(str);
-        sprintf(str, " + time   : %ld", packet->time);
-        lines.push_back(str);
+        using namespace slankdev;
+        cursor_index = 0;
+        lines.clear();
+
+        const uint8_t* ptr = reinterpret_cast<const uint8_t*>(pack->buf);
+        size_t len = pack->len;
+
+        size_t headerlen = 0;
+
+        const ether* eth = reinterpret_cast<const ether*>(ptr);
+        lines.push_back(new Ethernetblock(ptr, len, &headerlen));
+        uint16_t type = ntohs(eth->type);
+        len -= headerlen;
+        ptr += headerlen;
+
+        lines.push_back(new IP(ptr, len, &headerlen));
+        lines.push_back(new ARP(ptr, len, &headerlen));
+        lines.push_back(new Binary);
+
+        if (type == 0x0800) {
+            /*
+             * Analyze IP
+             */
+            lines.push_back(new IP(ptr, len, &headerlen));
+        } else if (type == 0x86dd) {
+            /*
+             * Analyze IPv6
+             */
+            lines.push_back(new IPv6(ptr, len, &headerlen));
+        } else if (type == 0x0806) {
+            /*
+             * Analyze ARP
+             */
+            lines.push_back(new ARP(ptr, len, &headerlen));
+        } else {
+            lines.push_back(new Binary);
+        }
     }
     void refresh()
     {
+        clear_screen();
         current_x = x;
         current_y = y;
-        for (size_t i=0, c=0; i<lines.size() && c<h; i++, c++) {
+        for (size_t i=0; i<lines.size(); i++) {
             if (i == get_cursor())
-                println_hl("%s", lines[i].c_str());
+                println_hl(lines[i]->to_string().c_str());
             else
-                println("%s", lines[i].c_str());
+                println(lines[i]->to_string().c_str());
+
+            if (lines[i]->get_state() == OPEN) {
+                for (size_t c=0; c<lines[i]->childs.size(); c++) {
+                    println("   %s", lines[i]->childs[c]->to_string().c_str());
+                }
+            }
         }
         for (size_t i=0; i<h-lines.size(); i++) {
             for (size_t c=0; c<w; c++) print(" ");
             println("");
         }
     }
+    void press_enter() { lines[get_cursor()]->openclose(); }
 };
 
 
