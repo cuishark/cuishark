@@ -107,7 +107,7 @@ public:
 class staticline : public line {
     const std::string msg;
 public:
-    staticline(const char* str) : msg(str) {}
+    staticline(const std::string& str) : msg(str) {}
     std::string to_string() override { return msg; }
 };
 
