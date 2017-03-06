@@ -141,109 +141,8 @@ public:
     }
 };
 
+#include "protocol.h"
 
-
-class Ethernetblock : public Protoblock {
-public:
-    Ethernetblock(const void* ptr, size_t len, size_t* headerlen)
-    {
-        using namespace slankdev;
-        childs.push_back(new staticline("dst"));
-        childs.push_back(new staticline("src"));
-        childs.push_back(new staticline("type"));
-        *headerlen = sizeof(ether);
-    }
-    std::string to_string() { return "Ethernet"; }
-};
-
-class IP : public Protoblock {
-public:
-    IP(const void* ptr, size_t len, size_t* headerlen)
-    {
-        using namespace slankdev;
-        childs.push_back(new staticline("src address"));
-        childs.push_back(new staticline("dst address"));
-        childs.push_back(new staticline("protocol"));
-        *headerlen = (20);
-    }
-    std::string to_string() { return "Internet Protocol version 4"; }
-};
-
-
-class ARP : public Protoblock {
-public:
-    ARP(const void* ptr, size_t len, size_t* headerlen)
-    {
-        using namespace slankdev;
-        childs.push_back(new staticline("Operation"));
-        childs.push_back(new staticline("Source Hw address"));
-        childs.push_back(new staticline("Target Hw address"));
-        childs.push_back(new staticline("Source Proto address"));
-        childs.push_back(new staticline("Target Proto address"));
-        *headerlen = 0;
-    }
-    std::string to_string() { return "Adress Resolution Protocol"; }
-};
-
-
-class IPv6 : public Protoblock {
-public:
-    IPv6(const void* ptr, size_t len, size_t* headerlen)
-    {
-        using namespace slankdev;
-        childs.push_back(new staticline("src address"));
-        childs.push_back(new staticline("dst address"));
-        childs.push_back(new staticline("protocol"));
-        *headerlen = 0;
-        throw slankdev::exception("IPV6 is not support yet.");
-    }
-    std::string to_string() { return "Internet Protocol version 6"; }
-};
-
-
-class TCP : public Protoblock {
-public:
-    TCP(const void* ptr, size_t len, size_t* headerlen)
-    {
-        using namespace slankdev;
-        childs.push_back(new staticline("src port"));
-        childs.push_back(new staticline("dst port"));
-        childs.push_back(new staticline("sequence number"));
-        childs.push_back(new staticline("acknoledge number"));
-        childs.push_back(new staticline("window size"));
-        childs.push_back(new staticline("flags"));
-        childs.push_back(new staticline("checksum"));
-        *headerlen = 0;
-    }
-    std::string to_string() { return "Transration Control Protocol"; }
-};
-
-
-class UDP : public Protoblock {
-public:
-    UDP(const void* ptr, size_t len, size_t* headerlen)
-    {
-        using namespace slankdev;
-        childs.push_back(new staticline("src port"));
-        childs.push_back(new staticline("dst port"));
-        childs.push_back(new staticline("length"));
-        childs.push_back(new staticline("checksum"));
-        *headerlen = 0;
-    }
-    std::string to_string() { return "User Datagram Protocol"; }
-};
-
-
-
-class Binary : public Protoblock {
-public:
-    Binary()
-    {
-        using namespace slankdev;
-        childs.push_back(new staticline("raw data"));
-    }
-    std::string to_string() { return "Binary Data"; }
-};
 
 
 class Pane_detail : public pane {
@@ -268,46 +167,7 @@ public:
 
     Pane_detail(size_t ix, size_t iy, size_t iw, size_t ih,
             slankdev::ncurses& scr) : pane(ix, iy, iw, ih, scr), cursor_index(0) {}
-    void add_analyze_result(Packet* pack)
-    {
-        using namespace slankdev;
-        cursor_index = 0;
-        lines.clear();
-
-        const uint8_t* ptr = reinterpret_cast<const uint8_t*>(pack->buf);
-        size_t len = pack->len;
-
-        size_t headerlen = 0;
-
-        const ether* eth = reinterpret_cast<const ether*>(ptr);
-        lines.push_back(new Ethernetblock(ptr, len, &headerlen));
-        uint16_t type = ntohs(eth->type);
-        len -= headerlen;
-        ptr += headerlen;
-
-        lines.push_back(new IP(ptr, len, &headerlen));
-        lines.push_back(new ARP(ptr, len, &headerlen));
-        lines.push_back(new Binary);
-
-        if (type == 0x0800) {
-            /*
-             * Analyze IP
-             */
-            lines.push_back(new IP(ptr, len, &headerlen));
-        } else if (type == 0x86dd) {
-            /*
-             * Analyze IPv6
-             */
-            lines.push_back(new IPv6(ptr, len, &headerlen));
-        } else if (type == 0x0806) {
-            /*
-             * Analyze ARP
-             */
-            lines.push_back(new ARP(ptr, len, &headerlen));
-        } else {
-            lines.push_back(new Binary);
-        }
-    }
+    void add_analyze_result(Packet* pack);
     void refresh()
     {
         current_x = x;
@@ -414,4 +274,82 @@ public:
         }
     }
 };
+
+
+
+void Pane_detail::add_analyze_result(Packet* pack)
+{
+    using namespace slankdev;
+    lines.clear();
+    cursor_index = 0;
+
+    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(pack->buf);
+    size_t len = pack->len;
+
+    Ethernet* eth = new Ethernet(ptr, len);
+    lines.push_back(eth);
+    len -= eth->headerlen();
+    ptr += eth->headerlen();
+    uint16_t type = eth->type();
+
+    switch (type) {
+        case 0x800:
+        {
+            IP* ip = new IP(ptr, len);
+            lines.push_back(ip);
+            len -= ip->headerlen();
+            ptr += ip->headerlen();
+            uint8_t proto = ip->protocol();
+
+            switch (proto) {
+                case 1:
+                {
+                    ICMP* icmp = new ICMP(ptr, len);
+                    lines.push_back(icmp);
+                    len -= icmp->headerlen();
+                    ptr += icmp->headerlen();
+                    break;
+                }
+                case 17:
+                {
+                    UDP* udp = new UDP(ptr, len);
+                    lines.push_back(udp);
+                    len -= udp->headerlen();
+                    ptr += udp->headerlen();
+                    break;
+                }
+                case 6:
+                {
+                    TCP* tcp = new TCP(ptr, len);
+                    lines.push_back(tcp);
+                    len -= tcp->headerlen();
+                    ptr += tcp->headerlen();
+                    break;
+                }
+            }
+        }
+        case 0x86dd:
+        {
+            /*
+             * Analyze IPv6
+             */
+            // throw slankdev::exception("ipv6 is not supported yet.");
+            break;
+        }
+        case 0x0806:
+        {
+            /*
+             * Analyze ARP
+             */
+            ARP* arp = new ARP(ptr, len);
+            lines.push_back(arp);
+            len -= arp->headerlen();
+            ptr += arp->headerlen();
+            break;
+        }
+    }
+    if (len > 0) lines.push_back(new Binary(ptr, len));
+}
+
+
 
