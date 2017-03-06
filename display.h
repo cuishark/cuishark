@@ -142,6 +142,7 @@ public:
         fds[1].events = POLLIN;
         while (1) {
             if (poll(fds, 2, 100)) {
+                screen.clear();
 
                 if (fds[0].revents & POLLIN) {
                     struct pcap_pkthdr header;
@@ -183,3 +184,5 @@ public:
         screen.refresh();
     }
 };
+
+

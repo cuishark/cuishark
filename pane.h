@@ -37,15 +37,6 @@ public:
         screen.mvprintw(current_y, current_x, fmt, arg...);
         current_x += len;
     }
-    void clear_screen()
-    {
-        for (size_t i=0; i<h; i++) {
-            for (size_t j=0; j<w-1; j++) {
-                print(" ");
-            }
-            println("");
-        }
-    }
     void putc(char c)
     {
         if (c == '\n') {
@@ -106,45 +97,6 @@ public:
 
 
 
-
-
-
-
-class Protocol {
-    size_t analyze_icmp(const void* pkt, size_t len)
-    {}
-    size_t analyze_udp(const void* pkt, size_t len)
-    {}
-    size_t analyze_tcp(const void* pkt, size_t len)
-    {}
-    size_t analyze_arp(const void* pkt, size_t len)
-    {}
-    size_t analyze_ip(const void* pkt, size_t len)
-    {}
-    size_t analyze_ether(const void* pkt, size_t len)
-    {
-        using namespace slankdev;
-        const ether* eth = reinterpret_cast<const ether*>(pkt);
-        switch (ntohs(eth->type)) {
-            case 0x0800:
-            case 0x0806:
-            case 0x86dd:
-            default:
-                break;
-        }
-    }
-public:
-    Protocol(const void* pkt, size_t len)
-    {
-        analyze_ether(pkt, len);
-    }
-    std::string line()
-    {
-    }
-};
-
-
-
 class line {
 public:
     virtual ~line() {}
@@ -173,7 +125,7 @@ public:
     std::vector<line*> childs;
     State get_state() const { return state; }
 
-    Protoblock() : state(OPEN) {}
+    Protoblock() : state(CLOSE) {}
     void openclose()
     {
         switch (state) {
@@ -247,6 +199,40 @@ public:
     }
     std::string to_string() { return "Internet Protocol version 6"; }
 };
+
+
+class TCP : public Protoblock {
+public:
+    TCP(const void* ptr, size_t len, size_t* headerlen)
+    {
+        using namespace slankdev;
+        childs.push_back(new staticline("src port"));
+        childs.push_back(new staticline("dst port"));
+        childs.push_back(new staticline("sequence number"));
+        childs.push_back(new staticline("acknoledge number"));
+        childs.push_back(new staticline("window size"));
+        childs.push_back(new staticline("flags"));
+        childs.push_back(new staticline("checksum"));
+        *headerlen = 0;
+    }
+    std::string to_string() { return "Transration Control Protocol"; }
+};
+
+
+class UDP : public Protoblock {
+public:
+    UDP(const void* ptr, size_t len, size_t* headerlen)
+    {
+        using namespace slankdev;
+        childs.push_back(new staticline("src port"));
+        childs.push_back(new staticline("dst port"));
+        childs.push_back(new staticline("length"));
+        childs.push_back(new staticline("checksum"));
+        *headerlen = 0;
+    }
+    std::string to_string() { return "User Datagram Protocol"; }
+};
+
 
 
 class Binary : public Protoblock {
@@ -324,7 +310,6 @@ public:
     }
     void refresh()
     {
-        clear_screen();
         current_x = x;
         current_y = y;
         for (size_t i=0; i<lines.size(); i++) {
