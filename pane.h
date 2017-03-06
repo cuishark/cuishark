@@ -97,6 +97,39 @@ public:
 
 
 
+class Protocol {
+    size_t analyze_icmp(const void* pkt, size_t len)
+    {}
+    size_t analyze_udp(const void* pkt, size_t len)
+    {}
+    size_t analyze_tcp(const void* pkt, size_t len)
+    {}
+    size_t analyze_arp(const void* pkt, size_t len)
+    {}
+    size_t analyze_ip(const void* pkt, size_t len)
+    {}
+    size_t analyze_ether(const void* pkt, size_t len)
+    {
+        using namespace slankdev;
+        const ether* eth = reinterpret_cast<const ether*>(pkt);
+        switch (ntohs(eth->type)) {
+            case 0x0800:
+            case 0x0806:
+            case 0x86dd:
+            default:
+                break;
+        }
+    }
+public:
+    Protocol(const void* pkt, size_t len)
+    {
+        analyze_ether(pkt, len);
+    }
+    std::string line()
+    {
+    }
+};
+
 
 class Pane_detail : public pane {
     ssize_t cursor_index;
