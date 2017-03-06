@@ -54,7 +54,7 @@ public:
         statusline (0, a(H)+3*m(H)  , screen.getw(), cstate)
     {
         char errbuf[PCAP_ERRBUF_SIZE];
-        handle = pcap_open_live("lo", BUFSIZ, 0, 0, errbuf);
+        handle = pcap_open_live("wlx4ce676b67f5b", BUFSIZ, 0, 0, errbuf);
         // handle = pcap_open_offline("in.pcap", errbuf);
         if (handle == NULL) {
             throw slankdev::exception("pcap_open_live");

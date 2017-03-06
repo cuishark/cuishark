@@ -26,7 +26,8 @@ public:
         sprintf(str, "%5zd %-13ld %-20s %-20s %6s %5zd %-10s" , number, time,
                 eth->src.to_string().c_str(),
                 eth->dst.to_string().c_str(),
-                "protocol", len, "summry");
+                "protocol", len,
+                "yukari is realy realy awesome");
         return str;
     }
 };
