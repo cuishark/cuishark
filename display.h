@@ -86,7 +86,14 @@ public:
     void press_j()
     {
         switch (cstate) {
-            case LIST  : pane_list.inc_cursor()  ; break;
+            case LIST  :
+            {
+                pane_list.inc_cursor();
+                Packet* pack = pane_list.packets[pane_list.get_cursor()];
+                pane_detail.add_analyze_result(pack);
+                pane_binary.hex(pack);
+                break;
+            }
             case DETAIL: pane_detail.inc_cursor(); break;
             case BINARY: pane_binary.inc_cursor(); break;
             defaut: throw slankdev::exception("UNknown state");
@@ -95,13 +102,20 @@ public:
     void press_k()
     {
         switch (cstate) {
-            case LIST  : pane_list.dec_cursor()  ; break;
+            case LIST  :
+            {
+                pane_list.dec_cursor();
+                Packet* pack = pane_list.packets[pane_list.get_cursor()];
+                pane_detail.add_analyze_result(pack);
+                pane_binary.hex(pack);
+                break;
+            }
             case DETAIL: pane_detail.dec_cursor(); break;
             case BINARY: pane_binary.dec_cursor(); break;
             defaut: throw slankdev::exception("UNknown state");
         }
     }
-    void press_enter()
+    void open_close()
     {
         switch (cstate) {
             case LIST:
@@ -152,7 +166,7 @@ public:
         fds[1].fd = fileno(stdin);
         fds[1].events = POLLIN;
         while (1) {
-            int res = poll(fds, 2, 100);
+            int res = poll(fds, 2, 1000);
             if (res < 0) {
                 throw slankdev::exception("poll");
             } else {
@@ -188,8 +202,9 @@ public:
                         case '\t':
                             charnge_cstate();
                             break;
+                        case ' ':
                         case '\n':
-                            press_enter();
+                            open_close();
                             break;
                         case '?':
                             view_help();
@@ -202,6 +217,13 @@ public:
     }
     void refresh()
     {
+        static bool first = true;
+        if (!pane_list.packets.empty() && first) {
+            Packet* pack = pane_list.packets[pane_list.get_cursor()];
+            pane_detail.add_analyze_result(pack);
+            pane_binary.hex(pack);
+            first = false;
+        }
         pane_list.refresh();
         pane_detail.refresh();
         pane_binary.refresh();

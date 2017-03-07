@@ -17,7 +17,7 @@ all:
 	$(CXX) $(SRC) -o $(TARGET) $(CXXFLAGS) $(LDFLAGS)
 
 net:
-	sudo ./$(TARGET) net wlp3s0
+	sudo ./$(TARGET) net lo
 
 
 gdb:

@@ -26,8 +26,10 @@ public:
     void println_hl(const char* fmt, Arg... arg)
     {
         attron(A_REVERSE);
-        screen.mvprintw(current_y++, current_x, fmt, arg...);
-        current_x = x;
+        std::string str = slankdev::fs(fmt, arg...);
+        screen.mvprintw(current_y, current_x, str.c_str());
+        current_x += str.length();
+        newline();
         attroff(A_REVERSE);
     }
     template <class... Arg>
@@ -37,6 +39,12 @@ public:
         std::string str = slankdev::fs(fmt, arg...);
         screen.mvprintw(current_y, current_x, str.c_str());
         current_x += str.length();
+    }
+    void newline()
+    {
+        for (size_t i=current_x; i<w; i++) { print(" "); }
+        current_x = 0;
+        current_y ++;
     }
     void putc(char c)
     {
