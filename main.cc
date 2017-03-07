@@ -22,7 +22,12 @@
 
 int main(int argc, char *argv[])
 {
-    display dsp0;
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s interface\n", argv[0]);
+        return -1;
+    }
+
+    display dsp0(argv[1]);
     dsp0.dispatch();
 }
 

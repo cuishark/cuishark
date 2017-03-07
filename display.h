@@ -46,7 +46,7 @@ public:
     Pane_binary pane_binary;
     Statusline statusline;
 
-    display() :
+    display(const char* ifname) :
         cstate(LIST),
         pane_list  (0, 0            , screen.getw(), a(H)+m(H), screen),
         pane_detail(0, a(H)+m(H)+1  , screen.getw(), m(H)     , screen),
@@ -54,7 +54,7 @@ public:
         statusline (0, a(H)+3*m(H)  , screen.getw(), cstate)
     {
         char errbuf[PCAP_ERRBUF_SIZE];
-        handle = pcap_open_live("wlx4ce676b67f5b", BUFSIZ, 0, 0, errbuf);
+        handle = pcap_open_live(ifname, BUFSIZ, 0, 0, errbuf);
         // handle = pcap_open_offline("in.pcap", errbuf);
         if (handle == NULL) {
             throw slankdev::exception("pcap_open_live");
