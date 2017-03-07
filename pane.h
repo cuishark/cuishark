@@ -2,6 +2,7 @@
 #pragma once
 
 #include <slankdev/string.h>
+#include <algorithm>
 
 class pane {
 protected:
@@ -222,7 +223,7 @@ public:
         using namespace slankdev;
 
         const void* buffer = packet->buf;
-        size_t bufferlen   = packet->len;
+        ssize_t bufferlen   = packet->len;
 
         const uint8_t *data = reinterpret_cast<const uint8_t*>(buffer);
         size_t row = 0;
@@ -233,9 +234,7 @@ public:
 
             line += fs(" %04zx   ", row);
 
-            size_t n;
-            if (bufferlen < 16) n = bufferlen;
-            else                n = 16;
+            size_t n = std::min(bufferlen, ssize_t(16));
 
             for (size_t i = 0; i < n; i++) {
                 if (i == 8) { line += " "; }
@@ -259,15 +258,12 @@ public:
     {
         current_x = x;
         current_y = y;
-        for (size_t i=0, c=0; i<lines.size() && c<h; i++, c++) {
+        size_t start_idx = list_start_index;
+        for (size_t i=start_idx, c=0; i<lines.size() && c<h; i++, c++) {
             if (i == get_cursor())
                 println_hl("%s", lines[i].c_str());
             else
                 println("%s", lines[i].c_str());
-        }
-        for (size_t i=0; i<h-lines.size(); i++) {
-            for (size_t c=0; c<w; c++) print(" ");
-            println("");
         }
     }
 };

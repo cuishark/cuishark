@@ -1,6 +1,7 @@
 
 #pragma once
 #include <slankdev/string.h>
+#include <algorithm>
 
 class Ethernet : public Protoblock {
     const slankdev::ether* hdr;
@@ -210,7 +211,7 @@ public:
         using namespace slankdev;
 
         const void* buffer = ptr;
-        size_t bufferlen   = len;
+        ssize_t bufferlen   = len;
 
         const uint8_t *data = reinterpret_cast<const uint8_t*>(buffer);
         size_t row = 0;
@@ -219,11 +220,8 @@ public:
         while (bufferlen > 0) {
             line.clear();
 
-            line += fs("    ");
-
-            size_t n;
-            if (bufferlen < 16) n = bufferlen;
-            else                n = 16;
+            line += fs("     ");
+            size_t n = std::min(bufferlen, ssize_t(16));
 
             for (size_t i = 0; i < n; i++) {
                 if (i == 8) { line += " "; }

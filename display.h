@@ -56,7 +56,7 @@ public:
         cstate(LIST),
         pane_list  (0, 0            , screen.getw(), a(H)+m(H), screen),
         pane_detail(0, a(H)+m(H)+1  , screen.getw(), m(H)     , screen),
-        pane_binary(0, a(H)+2*m(H)+1, screen.getw(), m(H)     , screen),
+        pane_binary(0, a(H)+2*m(H)+1, screen.getw(), m(H)-1   , screen),
         statusline (0, a(H)+3*m(H)  , screen.getw(), cstate)
     {
         char errbuf[PCAP_ERRBUF_SIZE];
