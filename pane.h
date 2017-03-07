@@ -43,7 +43,7 @@ public:
     void newline()
     {
         for (size_t i=current_x; i<w; i++) { print(" "); }
-        current_x = 0;
+        current_x = x;
         current_y ++;
     }
     void putc(char c)

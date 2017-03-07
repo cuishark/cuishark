@@ -13,9 +13,11 @@ class Statusline {
     const size_t y;
     const size_t w;
     const cursor_state& state;
+    slankdev::ncurses& screen;
 public:
-    Statusline(size_t ix, size_t iy, size_t iw, cursor_state& c)
-        : x(ix), y(iy), w(iw), state(c) {}
+    Statusline(size_t ix, size_t iy, size_t iw, cursor_state& c,
+            slankdev::ncurses& sc)
+        : x(ix), y(iy), w(iw), state(c), screen(sc) {}
     const char* state2str(cursor_state s)
     {
         switch (s) {
@@ -27,7 +29,17 @@ public:
     }
     void refresh()
     {
-        mvprintw(y, x, "[CUISHARK] pane=%s", state2str(state));
+        move(y, x);
+        attron(A_REVERSE);
+        printline("[CUISHARK] pane=%s", state2str(state));
+        attroff(A_REVERSE);
+    }
+    template <class... Arg>
+    void printline(const char* fmt, Arg... arg)
+    {
+        move(y, x);
+        for (size_t i=x; i<w; i++) { screen.printw(" "); }
+        screen.mvprintw(y, x, fmt, arg...);
     }
 };
 
@@ -54,10 +66,10 @@ public:
 
     display(const char* ifname, mode md) :
         cstate(LIST),
-        pane_list  (0, 0            , screen.getw(), a(H)+m(H), screen),
-        pane_detail(0, a(H)+m(H)+1  , screen.getw(), m(H)     , screen),
-        pane_binary(0, a(H)+2*m(H)+1, screen.getw(), m(H)-1   , screen),
-        statusline (0, a(H)+3*m(H)  , screen.getw(), cstate)
+        pane_list  (1, 1            , screen.getw()-2, a(H)+m(H)-1, screen),
+        pane_detail(1, a(H)+m(H)+2  , screen.getw()-2, m(H)     -1, screen),
+        pane_binary(1, a(H)+2*m(H)+3, screen.getw()-2, m(H)-2   -4, screen),
+        statusline (1, a(H)+3*m(H)-1, screen.getw()-2, cstate     , screen)
     {
         char errbuf[PCAP_ERRBUF_SIZE];
         if (md == netif)
@@ -215,6 +227,27 @@ public:
             refresh();
         }
     }
+    void print_frame()
+    {
+        size_t x = 0;
+        size_t y = 0;
+        const size_t w = screen.getw();
+        const size_t h = screen.geth();
+        for (y = 0; y<h; y++) {
+            for (x = 0; x<w; x++) {
+                if (x==0 || x==w-1)
+                    screen.mvprintw(y,x, "|");
+
+                if ( (y==0) ||
+                 (y==(pane_list.h + pane_list.y + 1)) ||
+                 (y==(pane_detail.h + pane_detail.y + 1)) ||
+                 (y==(pane_binary.h + pane_binary.y + 1)) ||
+                 (y==h-1) ) {
+                    screen.mvprintw(y,x, "-");
+                }
+            }
+        }
+    }
     void refresh()
     {
         static bool first = true;
@@ -228,6 +261,7 @@ public:
         pane_detail.refresh();
         pane_binary.refresh();
         statusline.refresh();
+        print_frame();
         screen.refresh();
     }
 };

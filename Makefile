@@ -8,7 +8,7 @@ OBJ = $(SRC:.cc=.c)
 TARGET = cuishark
 
 CXXFLAGS +=  -std=c++11 -Wno-format-security -g -O0
-CXXFLAGS += -Iinclude
+# CXXFLAGS += -Iinclude
 
 LDFLAGS  = -lncurses -lpcap
 
