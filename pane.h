@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <slankdev/string.h>
 
 class pane {
 protected:
@@ -31,11 +32,10 @@ public:
     template <class... Arg>
     void print(const char* fmt, Arg... arg)
     {
-        char str[1000];
-        sprintf(str, fmt, arg...);
-        size_t len = strlen(str);
-        screen.mvprintw(current_y, current_x, fmt, arg...);
-        current_x += len;
+        fflush(stdout);
+        std::string str = slankdev::fs(fmt, arg...);
+        screen.mvprintw(current_y, current_x, str.c_str());
+        current_x += str.length();
     }
     void putc(char c)
     {
@@ -55,7 +55,7 @@ class Pane_list : public pane {
     ssize_t cursor_index;
     size_t  list_start_index;
 public:
-    std::vector<Packet> packets;
+    std::vector<Packet*> packets;
     ssize_t get_cursor() { return cursor_index; }
     void dec_cursor()
     {
@@ -75,7 +75,7 @@ public:
     void push_packet(const void* packet, struct pcap_pkthdr* hdr)
     {
         static int number = 0;
-        packets.emplace_back(packet, hdr->len, hdr->ts.tv_sec, number++);
+        packets.push_back(new Packet(packet, hdr->len, hdr->ts.tv_sec, number++));
     }
     void refresh()
     {
@@ -88,9 +88,9 @@ public:
         size_t start_idx = list_start_index;
         for (size_t i=start_idx, c=0; i<packets.size() && c<h; i++, c++) {
             if (i == get_cursor())
-                println_hl(packets[i].line().c_str());
+                println_hl(packets[i]->line().c_str());
             else
-                println(packets[i].line().c_str());
+                println(packets[i]->line().c_str());
         }
     }
 };
@@ -219,19 +219,19 @@ public:
     void hex(Packet* packet)
     {
         lines.clear();
+        using namespace slankdev;
 
         const void* buffer = packet->buf;
         size_t bufferlen   = packet->len;
-        char str[1000];
 
         const uint8_t *data = reinterpret_cast<const uint8_t*>(buffer);
         size_t row = 0;
         std::string line;
+
         while (bufferlen > 0) {
             line.clear();
 
-            sprintf(str, " %04zx:   ", row);
-            line += str;
+            line += fs(" %04zx   ", row);
 
             size_t n;
             if (bufferlen < 16) n = bufferlen;
@@ -239,8 +239,7 @@ public:
 
             for (size_t i = 0; i < n; i++) {
                 if (i == 8) { line += " "; }
-                sprintf(str, " %02x", data[i]);
-                line += str;
+                line += fs(" %02x", data[i]);
             }
             for (size_t i = n; i < 16; i++) { line += "   "; }
             line += "   ";
@@ -248,10 +247,8 @@ public:
                 if (i == 8) { line += "  "; }
                 uint8_t c = data[i];
                 if (!(0x20 <= c && c <= 0x7e)) c = '.';
-                sprintf(str, "%c", c);
-                line += str;
+                line += fs("%c", c);
             }
-            println("");
             lines.push_back(line);
             bufferlen -= n;
             data += n;

@@ -36,6 +36,12 @@ size_t a(size_t h) { return (h-1) % 3; }
 size_t m(size_t h) { return ((h-1)-((h-1)%3))/3; }
 #define H screen.geth()
 
+enum mode {
+    fileif,
+    netif,
+};
+
+
 class display {
     slankdev::ncurses screen;
     pcap_t *handle;
@@ -46,7 +52,7 @@ public:
     Pane_binary pane_binary;
     Statusline statusline;
 
-    display(const char* ifname) :
+    display(const char* ifname, mode md) :
         cstate(LIST),
         pane_list  (0, 0            , screen.getw(), a(H)+m(H), screen),
         pane_detail(0, a(H)+m(H)+1  , screen.getw(), m(H)     , screen),
@@ -54,8 +60,13 @@ public:
         statusline (0, a(H)+3*m(H)  , screen.getw(), cstate)
     {
         char errbuf[PCAP_ERRBUF_SIZE];
-        handle = pcap_open_live(ifname, BUFSIZ, 0, 0, errbuf);
-        // handle = pcap_open_offline("in.pcap", errbuf);
+        if (md == netif)
+            handle = pcap_open_live(ifname, BUFSIZ, 0, 0, errbuf);
+        else if (md == fileif)
+            handle = pcap_open_offline(ifname, errbuf);
+        else
+            throw slankdev::exception("unknown mode");
+
         if (handle == NULL) {
             throw slankdev::exception("pcap_open_live");
         }
@@ -96,7 +107,7 @@ public:
             case LIST:
             {
                 if (pane_list.packets.empty()) return;
-                Packet* pack = &pane_list.packets[pane_list.get_cursor()];
+                Packet* pack = pane_list.packets[pane_list.get_cursor()];
                 pane_detail.add_analyze_result(pack);
                 pane_binary.hex(pack);
                 break;
@@ -141,14 +152,28 @@ public:
         fds[1].fd = fileno(stdin);
         fds[1].events = POLLIN;
         while (1) {
-            if (poll(fds, 2, 100)) {
+            int res = poll(fds, 2, 100);
+            if (res < 0) {
+                throw slankdev::exception("poll");
+            } else {
                 screen.clear();
 
                 if (fds[0].revents & POLLIN) {
                     struct pcap_pkthdr header;
                     const u_char *packet;
                     packet = pcap_next(handle, &header);
-                    pane_list.push_packet(packet, &header);
+                    if (packet == nullptr) {
+                        pcap_close(handle);
+                        fds[0].fd = -1;
+                        static int c = 0;
+                        c++;
+                        if (c!=1) {
+                            throw slankdev::exception("FFDFDFDF");
+                        }
+
+                    } else {
+                        pane_list.push_packet(packet, &header);
+                    }
                 }
 
                 if (fds[1].revents & POLLIN) {

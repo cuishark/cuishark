@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <slankdev/exception.h>
+
 class Packet {
 public:
     uint8_t buf[2000];
@@ -11,6 +13,8 @@ public:
     Packet(const void* p, size_t l, uint64_t t, size_t n) :
         len(l), time(t), number(n)
     {
+        if (l > 2000)
+            throw slankdev::exception("FAAAAAAA");
         memcpy(buf, p, len);
     }
     std::string line()

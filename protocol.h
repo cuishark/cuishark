@@ -211,7 +211,6 @@ public:
 
         const void* buffer = ptr;
         size_t bufferlen   = len;
-        char str[1000];
 
         const uint8_t *data = reinterpret_cast<const uint8_t*>(buffer);
         size_t row = 0;
@@ -220,8 +219,7 @@ public:
         while (bufferlen > 0) {
             line.clear();
 
-            sprintf(str, "    ");
-            line += str;
+            line += fs("    ");
 
             size_t n;
             if (bufferlen < 16) n = bufferlen;
@@ -229,8 +227,7 @@ public:
 
             for (size_t i = 0; i < n; i++) {
                 if (i == 8) { line += " "; }
-                sprintf(str, " %02x", data[i]);
-                line += str;
+                line += fs(" %02x", data[i]);
             }
             for (size_t i = n; i < 16; i++) { line += "   "; }
             line += "   ";
