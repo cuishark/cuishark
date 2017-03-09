@@ -1,8 +1,13 @@
 
 #pragma once
 
+#include <pcap.h>
+#include <slankdev/ncurses.h>
 #include <slankdev/string.h>
 #include <algorithm>
+#include "packet.h"
+#include "protocol.h"
+
 
 class pane {
 protected:
@@ -64,7 +69,7 @@ class Pane_list : public pane {
     ssize_t cursor_index;
     size_t  list_start_index;
 public:
-    std::vector<Packet> packets;
+    std::vector<Packet*> packets;
     ssize_t get_cursor() { return cursor_index; }
     void dec_cursor()
     {
@@ -81,10 +86,16 @@ public:
     Pane_list(size_t ix, size_t iy, size_t iw, size_t ih,
             slankdev::ncurses& scr) : pane(ix, iy, iw, ih, scr),
             cursor_index(0), list_start_index(0) {}
+    virtual ~Pane_list()
+    {
+        for (Packet* p : packets) {
+            delete p;
+        }
+    }
     void push_packet(const void* packet, struct pcap_pkthdr* hdr)
     {
         static int number = 0;
-        packets.emplace_back(packet, hdr->len, hdr->ts.tv_sec, number++);
+        packets.push_back(new Packet(packet, hdr->len, hdr->ts.tv_sec, number++));
     }
     void refresh()
     {
@@ -97,60 +108,16 @@ public:
         size_t start_idx = list_start_index;
         for (size_t i=start_idx, c=0; i<packets.size() && c<h; i++, c++) {
             if (i == get_cursor())
-                println_hl(packets[i].line().c_str());
+                println_hl(packets[i]->line().c_str());
             else
-                println(packets[i].line().c_str());
+                println(packets[i]->line().c_str());
         }
     }
 };
 
 
 
-class line {
-public:
-    virtual ~line() {}
-    virtual std::string to_string() = 0;
-};
 
-
-class staticline : public line {
-    const std::string msg;
-public:
-    staticline(const std::string& str) : msg(str) {}
-    std::string to_string() override { return msg; }
-};
-
-
-
-
-enum State {
-    OPEN,
-    CLOSE,
-};
-
-class Protoblock : public line {
-    State state;
-public:
-    std::vector<std::string> childs;
-    State get_state() const { return state; }
-
-    Protoblock() : state(CLOSE) {}
-    void openclose()
-    {
-        switch (state) {
-            case OPEN:
-                state = CLOSE;
-                break;
-            case CLOSE:
-                state = OPEN;
-                break;
-            default:
-                throw slankdev::exception("UNKNOWN state");
-        }
-    }
-};
-
-#include "protocol.h"
 
 
 
@@ -158,47 +125,55 @@ class Pane_detail : public pane {
     ssize_t cursor_index;
     size_t  list_start_index;
 public:
-    std::vector<Protoblock*> lines;
+    Packet* pack;
 
     ssize_t get_cursor() { return cursor_index; }
     void dec_cursor()
     {
+        if (pack == nullptr) return;
+
         if (cursor_index-1 < list_start_index) scroll_up();
         if (get_cursor()-1 >= 0) cursor_index--;
     }
     void inc_cursor()
     {
+        if (pack == nullptr) return;
+
         if (cursor_index+1-list_start_index >= h) scroll_down();
-        if (get_cursor()+1 < lines.size()) cursor_index++;
+        if (get_cursor()+1 < pack->detail_lines.size()) cursor_index++;
     }
     void scroll_up()   { list_start_index --; }
     void scroll_down() { list_start_index ++; }
 
     Pane_detail(size_t ix, size_t iy, size_t iw, size_t ih,
-            slankdev::ncurses& scr) : pane(ix, iy, iw, ih, scr), cursor_index(0) {}
+            slankdev::ncurses& scr) : pane(ix, iy, iw, ih, scr), cursor_index(0),
+            pack(nullptr) {}
     void add_analyze_result(Packet* pack);
     void refresh()
     {
+        if (pack == nullptr)
+            return;
+
         current_x = x;
         current_y = y;
-        for (size_t i=0; i<lines.size(); i++) {
+        for (size_t i=0; i<pack->detail_lines.size(); i++) {
             if (i == get_cursor())
-                println_hl(lines[i]->to_string().c_str());
+                println_hl(pack->detail_lines[i]->to_string().c_str());
             else
-                println(lines[i]->to_string().c_str());
+                println(pack->detail_lines[i]->to_string().c_str());
 
-            if (lines[i]->get_state() == OPEN) {
-                for (size_t c=0; c<lines[i]->childs.size(); c++) {
-                    println("   %s", lines[i]->childs[c].c_str());
+            if (pack->detail_lines[i]->get_state() == OPEN) {
+                for (size_t c=0; c<pack->detail_lines[i]->childs.size(); c++) {
+                    println("   %s", pack->detail_lines[i]->childs[c].c_str());
                 }
             }
         }
-        for (size_t i=0; i<h-lines.size(); i++) {
+        for (size_t i=0; i<h-pack->detail_lines.size(); i++) {
             for (size_t c=0; c<w; c++) print(" ");
             println("");
         }
     }
-    void press_enter() { lines[get_cursor()]->openclose(); }
+    void press_enter() { pack->detail_lines[get_cursor()]->openclose(); }
 };
 
 
@@ -230,7 +205,7 @@ public:
         lines.clear();
         using namespace slankdev;
 
-        const void* buffer = packet->buf;
+        const void* buffer = packet->buf.data();
         ssize_t bufferlen   = packet->len;
 
         const uint8_t *data = reinterpret_cast<const uint8_t*>(buffer);
@@ -276,86 +251,6 @@ public:
     }
 };
 
-
-
-void Pane_detail::add_analyze_result(Packet* pack)
-{
-    using namespace slankdev;
-
-    for (Protoblock* p : lines) {
-        delete p;
-    }
-    lines.clear();
-
-    cursor_index = 0;
-
-    const uint8_t* ptr = reinterpret_cast<const uint8_t*>(pack->buf);
-    size_t len = pack->len;
-
-    Ethernet* eth = new Ethernet(ptr, len);
-    lines.push_back(eth);
-    len -= eth->headerlen();
-    ptr += eth->headerlen();
-    uint16_t type = eth->type();
-
-    switch (type) {
-        case 0x800:
-        {
-            IP* ip = new IP(ptr, len);
-            lines.push_back(ip);
-            len -= ip->headerlen();
-            ptr += ip->headerlen();
-            uint8_t proto = ip->protocol();
-
-            switch (proto) {
-                case 1:
-                {
-                    ICMP* icmp = new ICMP(ptr, len);
-                    lines.push_back(icmp);
-                    len -= icmp->headerlen();
-                    ptr += icmp->headerlen();
-                    break;
-                }
-                case 17:
-                {
-                    UDP* udp = new UDP(ptr, len);
-                    lines.push_back(udp);
-                    len -= udp->headerlen();
-                    ptr += udp->headerlen();
-                    break;
-                }
-                case 6:
-                {
-                    TCP* tcp = new TCP(ptr, len);
-                    lines.push_back(tcp);
-                    len -= tcp->headerlen();
-                    ptr += tcp->headerlen();
-                    break;
-                }
-            }
-        }
-        case 0x86dd:
-        {
-            /*
-             * Analyze IPv6
-             */
-            // throw slankdev::exception("ipv6 is not supported yet.");
-            break;
-        }
-        case 0x0806:
-        {
-            /*
-             * Analyze ARP
-             */
-            ARP* arp = new ARP(ptr, len);
-            lines.push_back(arp);
-            len -= arp->headerlen();
-            ptr += arp->headerlen();
-            break;
-        }
-    }
-    if (len > 0) lines.push_back(new Binary(ptr, len));
-}
 
 
 

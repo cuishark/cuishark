@@ -1,6 +1,14 @@
 
 #pragma ocne
 
+#include <stdio.h>
+#include <poll.h>
+#include <pcap.h>
+
+#include <slankdev/ncurses.h>
+
+
+
 enum cursor_state {
     LIST,
     DETAIL,
@@ -100,8 +108,8 @@ public:
             case LIST  :
             {
                 pane_list.inc_cursor();
-                Packet* pack = &pane_list.packets[pane_list.get_cursor()];
-                pane_detail.add_analyze_result(pack);
+                Packet* pack = pane_list.packets[pane_list.get_cursor()];
+                pane_detail.pack = pack;
                 pane_binary.hex(pack);
                 break;
             }
@@ -116,8 +124,8 @@ public:
             case LIST  :
             {
                 pane_list.dec_cursor();
-                Packet* pack = &pane_list.packets[pane_list.get_cursor()];
-                pane_detail.add_analyze_result(pack);
+                Packet* pack = pane_list.packets[pane_list.get_cursor()];
+                pane_detail.pack = pack;
                 pane_binary.hex(pack);
                 break;
             }
@@ -132,8 +140,8 @@ public:
             case LIST:
             {
                 if (pane_list.packets.empty()) return;
-                Packet* pack = &pane_list.packets[pane_list.get_cursor()];
-                pane_detail.add_analyze_result(pack);
+                Packet* pack = pane_list.packets[pane_list.get_cursor()];
+                pane_detail.pack = pack;
                 pane_binary.hex(pack);
                 break;
             }
@@ -154,7 +162,7 @@ public:
         size_t y = 0;
         screen.mvprintw(y++, x, "                                                    ");
         screen.mvprintw(y++, x, "    CuiShark version 0.0                            ");
-        screen.mvprintw(y++, x, "    Copyright 2017-2020 Hiroki SHIROKURA.           ");
+        screen.mvprintw(y++, x, "    Copyright 2017-2020 Hiroki SHIROKURA. @slankdev ");
         screen.mvprintw(y++, x, "                                                    ");
         screen.mvprintw(y++, x, "    Avalable Keyboard commands are below.           ");
         screen.mvprintw(y++, x, "    These are Vi-like key-bind because I'm vimmer.  ");
@@ -198,12 +206,6 @@ public:
                     if (packet == nullptr) {
                         pcap_close(handle);
                         fds[0].fd = -1;
-                        static int c = 0;
-                        c++;
-                        if (c!=1) {
-                            throw slankdev::exception("FFDFDFDF");
-                        }
-
                     } else {
                         pane_list.push_packet(packet, &header);
                     }
@@ -232,8 +234,8 @@ public:
                             break;
                     }
                 }
+                refresh();
             }
-            refresh();
         }
     }
 };

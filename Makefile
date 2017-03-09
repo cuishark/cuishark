@@ -1,6 +1,9 @@
 
-MODE    := pcap
-INPUTIF := in.pcap
+
+# GDB =
+GDB = gdb --args
+WLN = wlp2s0
+
 
 CXX = g++
 SRC = main.cc
@@ -8,20 +11,19 @@ OBJ = $(SRC:.cc=.c)
 TARGET = cuishark
 
 CXXFLAGS +=  -std=c++11 -Wno-format-security -g -O0
-# CXXFLAGS += -Iinclude
-
 LDFLAGS  = -lncurses -lpcap
 
 
 all:
 	$(CXX) $(SRC) -o $(TARGET) $(CXXFLAGS) $(LDFLAGS)
 
-net:
-	sudo ./$(TARGET) net lo
+pcap:
+	sudo $(GDB) ./$(TARGET) pcap in.pcap
+
+lo:
+	sudo $(GDB) ./$(TARGET) net lo
+
+wlan:
+	sudo $(GDB) ./$(TARGET) net $(WLN)
 
 
-gdb:
-	gdb --args ./$(TARGET) $(MODE) $(INPUTIF)
-
-run:
-	sudo ./$(TARGET) $(MODE) $(INPUTIF)

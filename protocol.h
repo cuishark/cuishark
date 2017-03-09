@@ -1,7 +1,59 @@
 
 #pragma once
-#include <slankdev/string.h>
+
 #include <algorithm>
+
+#include <slankdev/net/protocol.h>
+#include <slankdev/string.h>
+
+#include "pane.h"
+
+
+class line {
+public:
+    virtual ~line() {}
+    virtual std::string to_string() = 0;
+};
+
+
+class staticline : public line {
+    const std::string msg;
+public:
+    staticline(const std::string& str) : msg(str) {}
+    std::string to_string() override { return msg; }
+};
+
+
+
+enum State {
+    OPEN,
+    CLOSE,
+};
+
+class Protoblock : public line {
+    State state;
+public:
+    std::vector<std::string> childs;
+    State get_state() const { return state; }
+
+    Protoblock() : state(CLOSE) {}
+    void openclose()
+    {
+        switch (state) {
+            case OPEN:
+                state = CLOSE;
+                break;
+            case CLOSE:
+                state = OPEN;
+                break;
+            default:
+                throw slankdev::exception("UNKNOWN state");
+        }
+    }
+};
+
+
+
 
 class Ethernet : public Protoblock {
     const slankdev::ether* hdr;
@@ -21,6 +73,8 @@ public:
         msg = fs("Ethernet, Src: %s, Dst: %s",
             hdr->src.to_string().c_str(), hdr->dst.to_string().c_str());
     }
+    std::string src() { return hdr->src.to_string(); }
+    std::string dst() { return hdr->dst.to_string(); }
     std::string to_string() { return msg; }
     size_t headerlen() { return sizeof(slankdev::ether); }
     uint16_t type() { return ntohs(hdr->type); }
@@ -47,6 +101,8 @@ public:
         childs.push_back(fs("Source           : %s", hdr->src.to_string().c_str()) );
         childs.push_back(fs("Destination      : %s", hdr->dst.to_string().c_str()) );
     }
+    std::string src() { return hdr->src.to_string(); }
+    std::string dst() { return hdr->dst.to_string(); }
     std::string to_string() { return "Internet Protocol version 4"; }
     size_t headerlen() { return hdr->ihl << 2; }
     uint8_t protocol() { return hdr->proto; }
@@ -95,7 +151,6 @@ public:
         childs.push_back("src address"));
         childs.push_back("dst address"));
         childs.push_back("protocol"));
-        throw slankdev::exception("IPV6 is not support yet.");
     }
     std::string to_string() { return "Internet Protocol version 6"; }
 };
