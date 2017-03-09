@@ -1,7 +1,7 @@
 
 
-# GDB =
-GDB = gdb --args
+GDB =
+# GDB = gdb --args
 WLN = wlp2s0
 
 

@@ -208,6 +208,13 @@ public:
                         fds[0].fd = -1;
                     } else {
                         pane_list.push_packet(packet, &header);
+#define TSUIBI
+#ifdef TSUIBI
+                        pane_list.inc_cursor();
+                        Packet* pack = pane_list.packets[pane_list.get_cursor()];
+                        pane_detail.pack = pack;
+                        pane_binary.hex(pack);
+#endif
                     }
                 }
 
