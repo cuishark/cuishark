@@ -64,7 +64,7 @@ class Pane_list : public pane {
     ssize_t cursor_index;
     size_t  list_start_index;
 public:
-    std::vector<Packet*> packets;
+    std::vector<Packet> packets;
     ssize_t get_cursor() { return cursor_index; }
     void dec_cursor()
     {
@@ -84,7 +84,7 @@ public:
     void push_packet(const void* packet, struct pcap_pkthdr* hdr)
     {
         static int number = 0;
-        packets.push_back(new Packet(packet, hdr->len, hdr->ts.tv_sec, number++));
+        packets.emplace_back(packet, hdr->len, hdr->ts.tv_sec, number++);
     }
     void refresh()
     {
@@ -97,9 +97,9 @@ public:
         size_t start_idx = list_start_index;
         for (size_t i=start_idx, c=0; i<packets.size() && c<h; i++, c++) {
             if (i == get_cursor())
-                println_hl(packets[i]->line().c_str());
+                println_hl(packets[i].line().c_str());
             else
-                println(packets[i]->line().c_str());
+                println(packets[i].line().c_str());
         }
     }
 };
@@ -131,7 +131,7 @@ enum State {
 class Protoblock : public line {
     State state;
 public:
-    std::vector<line*> childs;
+    std::vector<std::string> childs;
     State get_state() const { return state; }
 
     Protoblock() : state(CLOSE) {}
@@ -189,7 +189,7 @@ public:
 
             if (lines[i]->get_state() == OPEN) {
                 for (size_t c=0; c<lines[i]->childs.size(); c++) {
-                    println("   %s", lines[i]->childs[c]->to_string().c_str());
+                    println("   %s", lines[i]->childs[c].c_str());
                 }
             }
         }
@@ -281,7 +281,12 @@ public:
 void Pane_detail::add_analyze_result(Packet* pack)
 {
     using namespace slankdev;
+
+    for (Protoblock* p : lines) {
+        delete p;
+    }
     lines.clear();
+
     cursor_index = 0;
 
     const uint8_t* ptr = reinterpret_cast<const uint8_t*>(pack->buf);

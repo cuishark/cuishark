@@ -100,7 +100,7 @@ public:
             case LIST  :
             {
                 pane_list.inc_cursor();
-                Packet* pack = pane_list.packets[pane_list.get_cursor()];
+                Packet* pack = &pane_list.packets[pane_list.get_cursor()];
                 pane_detail.add_analyze_result(pack);
                 pane_binary.hex(pack);
                 break;
@@ -116,7 +116,7 @@ public:
             case LIST  :
             {
                 pane_list.dec_cursor();
-                Packet* pack = pane_list.packets[pane_list.get_cursor()];
+                Packet* pack = &pane_list.packets[pane_list.get_cursor()];
                 pane_detail.add_analyze_result(pack);
                 pane_binary.hex(pack);
                 break;
@@ -132,7 +132,7 @@ public:
             case LIST:
             {
                 if (pane_list.packets.empty()) return;
-                Packet* pack = pane_list.packets[pane_list.get_cursor()];
+                Packet* pack = &pane_list.packets[pane_list.get_cursor()];
                 pane_detail.add_analyze_result(pack);
                 pane_binary.hex(pack);
                 break;

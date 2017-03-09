@@ -5,7 +5,7 @@
 
 class Packet {
 public:
-    uint8_t buf[2000];
+    uint8_t  buf[2000];
     size_t   len;
     uint64_t time;
     size_t   number;
@@ -14,7 +14,7 @@ public:
         len(l), time(t), number(n)
     {
         if (l > 2000)
-            throw slankdev::exception("FAAAAAAA");
+            throw slankdev::exception("length is too huge");
         memcpy(buf, p, len);
     }
     std::string line()
