@@ -11,7 +11,8 @@ A protocol analyzer like wireshark on CUI/TUI
 $ git clone https://github.com/slankdev/cuishark.git
 $ cd cuishark
 $ make
-$ sudo ./cuishark eth0
+$ sudo ./cuishark net eth0           // network-interface
+$ sudo ./cuishark pcap input.pcap    // pcap-file-interface
 ```
 
 
@@ -19,9 +20,13 @@ $ sudo ./cuishark eth0
 
  - libpcap
  - libncurses
+ - libslankdev (https://github.com/slankdev/libslankdev)
 
 ```
 $ sudo apt install libpcap-dev libncurses5
+$ git clone https://github.com/slankdev/libslankdev.git
+$ cd libslankdev
+$ sudo make install
 ```
 
 
