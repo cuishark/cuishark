@@ -120,17 +120,18 @@ public:
             throw slankdev::exception("arp length is too small");
         }
         using namespace slankdev;
-        childs.push_back(fs("Hardware type   : 0x%04x", hdr->hwtype)                );
-        childs.push_back(fs("Hardware len    : %d", hdr->hwlen )                    );
-        childs.push_back(fs("Proto type      : 0x%04x", hdr->ptype )                );
-        childs.push_back(fs("Proto len       : %d", hdr->plen  )                    );
-        childs.push_back(fs("Operation       : %d", hdr->operation)                 );
+        uint16_t op = ntohs(hdr->operation);
+
+        childs.push_back(fs("Hardware type   : 0x%04x", ntohs(hdr->hwtype))         );
+        childs.push_back(fs("Hardware len    : %d",     hdr->hwlen)                 );
+        childs.push_back(fs("Proto type      : 0x%04x", ntohs(hdr->ptype ))         );
+        childs.push_back(fs("Proto len       : %d",     hdr->plen)                  );
+        childs.push_back(fs("Operation       : %d", op)                             );
         childs.push_back(fs("Source Hardware : %s", hdr->hwsrc.to_string().c_str()) );
         childs.push_back(fs("Target Hardware : %s", hdr->hwdst.to_string().c_str()) );
         childs.push_back(fs("Source Protocol : %s", hdr->psrc.to_string().c_str())  );
         childs.push_back(fs("Target Protocol : %s", hdr->pdst.to_string().c_str())  );
 
-        uint16_t op = ntohs(hdr->operation);
         if (op == 1)      msg = "Address Resolution Protocol (Request)";
         else if (op == 2) msg = "Address Resolution Protocol (Replay)" ;
         else throw slankdev::exception("Unsupport arp op");
@@ -170,6 +171,8 @@ public:
         childs.push_back(fs("code   : 0x%04x", ntohs(hdr->code))     );
         childs.push_back(fs("cksum  : 0x%04x", ntohs(hdr->checksum)) );
     }
+    uint8_t type() { return hdr->type; }
+    uint8_t code() { return hdr->code; }
     std::string to_string() { return "Internet Control Messaging Protocol"; }
     size_t headerlen() { return sizeof(slankdev::icmp); }
 };
@@ -197,6 +200,8 @@ public:
         childs.push_back( fs("rx win      : 0x%04x    ", ntohs(hdr->rx_win)).c_str() );
         childs.push_back( fs("cksum       : 0x%04x    ", ntohs(hdr->cksum )).c_str() );
     }
+    uint16_t src() { return ntohs(hdr->sport); }
+    uint16_t dst() { return ntohs(hdr->dport); }
     std::string to_string() { return "Transration Control Protocol"; }
     size_t headerlen() { return hdr->data_off; }
 };
@@ -216,6 +221,8 @@ public:
         childs.push_back( fs("Data length      : %u\n", ntohs(hdr->len  )).c_str() );
         childs.push_back( fs("Checksum         : %u\n", ntohs(hdr->cksum)).c_str() );
     }
+    uint16_t src() { return ntohs(hdr->src); }
+    uint16_t dst() { return ntohs(hdr->dst); }
     std::string to_string() { return "User Datagram Protocol"; }
     size_t headerlen() { return sizeof(slankdev::udp); }
 };

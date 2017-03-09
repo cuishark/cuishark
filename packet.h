@@ -18,6 +18,7 @@ public:
     std::string dst;
     std::string protocol;
     std::string msg;
+    std::string summary;
 
     std::vector<Protoblock*> detail_lines;
 
@@ -43,7 +44,7 @@ public:
                 src.c_str(),
                 dst.c_str(),
                 protocol.c_str(), len,
-                "yukari is realy realy awesome");
+                summary.c_str());
         return str;
     }
 };
@@ -62,6 +63,7 @@ void Packet::analyze(const uint8_t* ptr, size_t len)
     src = eth->src();
     dst = eth->dst();
     protocol = "Ethernet";
+    summary  = fs("Ethernet packet.type=0x%04x", eth->type());
 
     switch (type) {
         case 0x800:
@@ -74,6 +76,7 @@ void Packet::analyze(const uint8_t* ptr, size_t len)
             src = ip->src();
             dst = ip->dst();
             protocol = "IPv4";
+            summary = fs("protocol=%u\n", ip->protocol());
 
             switch (proto) {
                 case 1:
@@ -83,6 +86,7 @@ void Packet::analyze(const uint8_t* ptr, size_t len)
                     len -= icmp->headerlen();
                     ptr += icmp->headerlen();
                     protocol = "ICMP";
+                    summary = fs("type=%u code=%u", icmp->type(), icmp->code());
                     break;
                 }
                 case 17:
@@ -92,6 +96,7 @@ void Packet::analyze(const uint8_t* ptr, size_t len)
                     len -= udp->headerlen();
                     ptr += udp->headerlen();
                     protocol = "UDP";
+                    summary = fs("%u -> %u", udp->src(), udp->dst());
                     break;
                 }
                 case 6:
@@ -101,6 +106,7 @@ void Packet::analyze(const uint8_t* ptr, size_t len)
                     len -= tcp->headerlen();
                     ptr += tcp->headerlen();
                     protocol = "TCP";
+                    summary = fs("%u -> %u", tcp->src(), tcp->dst());
                     break;
                 }
             }
