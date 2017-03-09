@@ -120,17 +120,18 @@ public:
             throw slankdev::exception("arp length is too small");
         }
         using namespace slankdev;
-        childs.push_back(fs("Hardware type   : 0x%04x", hdr->hwtype)                );
-        childs.push_back(fs("Hardware len    : %d", hdr->hwlen )                    );
-        childs.push_back(fs("Proto type      : 0x%04x", hdr->ptype )                );
-        childs.push_back(fs("Proto len       : %d", hdr->plen  )                    );
-        childs.push_back(fs("Operation       : %d", hdr->operation)                 );
+        uint16_t op = ntohs(hdr->operation);
+
+        childs.push_back(fs("Hardware type   : 0x%04x", ntohs(hdr->hwtype))         );
+        childs.push_back(fs("Hardware len    : %d",     hdr->hwlen)                 );
+        childs.push_back(fs("Proto type      : 0x%04x", ntohs(hdr->ptype ))         );
+        childs.push_back(fs("Proto len       : %d",     hdr->plen)                  );
+        childs.push_back(fs("Operation       : %d", op)                             );
         childs.push_back(fs("Source Hardware : %s", hdr->hwsrc.to_string().c_str()) );
         childs.push_back(fs("Target Hardware : %s", hdr->hwdst.to_string().c_str()) );
         childs.push_back(fs("Source Protocol : %s", hdr->psrc.to_string().c_str())  );
         childs.push_back(fs("Target Protocol : %s", hdr->pdst.to_string().c_str())  );
 
-        uint16_t op = ntohs(hdr->operation);
         if (op == 1)      msg = "Address Resolution Protocol (Request)";
         else if (op == 2) msg = "Address Resolution Protocol (Replay)" ;
         else throw slankdev::exception("Unsupport arp op");
