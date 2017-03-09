@@ -83,7 +83,6 @@ public:
             throw slankdev::exception("pcap_open_live");
         }
         noecho();
-        screen.refresh();
     }
     ~display() { pcap_close(handle); }
     void charnge_cstate()
@@ -170,6 +169,14 @@ public:
         screen.mvprintw(y++, x, "                                                    ");
         screen.getchar();
     }
+    void refresh()
+    {
+        pane_list.refresh();
+        pane_detail.refresh();
+        pane_binary.refresh();
+        statusline.refresh();
+        screen.refresh();
+    }
     void dispatch()
     {
         struct pollfd fds[2];
@@ -178,7 +185,7 @@ public:
         fds[1].fd = fileno(stdin);
         fds[1].events = POLLIN;
         while (1) {
-            int res = poll(fds, 2, 1000);
+            int res = poll(fds, 2, 100);
             if (res < 0) {
                 throw slankdev::exception("poll");
             } else {
@@ -204,6 +211,8 @@ public:
 
                 if (fds[1].revents & POLLIN) {
                     int c = screen.getchar();
+                    if (pane_list.packets.empty()) continue;
+
                     switch (c) {
                         case 'j':
                             press_j();
@@ -226,43 +235,6 @@ public:
             }
             refresh();
         }
-    }
-    void print_frame()
-    {
-        size_t x = 0;
-        size_t y = 0;
-        const size_t w = screen.getw();
-        const size_t h = screen.geth();
-        for (y = 0; y<h; y++) {
-            for (x = 0; x<w; x++) {
-                if (x==0 || x==w-1)
-                    screen.mvprintw(y,x, "|");
-
-                if ( (y==0) ||
-                 (y==(pane_list.h + pane_list.y + 1)) ||
-                 (y==(pane_detail.h + pane_detail.y + 1)) ||
-                 (y==(pane_binary.h + pane_binary.y + 1)) ||
-                 (y==h-1) ) {
-                    screen.mvprintw(y,x, "-");
-                }
-            }
-        }
-    }
-    void refresh()
-    {
-        static bool first = true;
-        if (!pane_list.packets.empty() && first) {
-            Packet* pack = pane_list.packets[pane_list.get_cursor()];
-            pane_detail.add_analyze_result(pack);
-            pane_binary.hex(pack);
-            first = false;
-        }
-        pane_list.refresh();
-        pane_detail.refresh();
-        pane_binary.refresh();
-        statusline.refresh();
-        print_frame();
-        screen.refresh();
     }
 };
 
