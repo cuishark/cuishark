@@ -134,13 +134,12 @@ public:
         if (len < sizeof(slankdev::tcp))
             throw slankdev::exception("length is too small");
         using namespace slankdev;
-        childs.push_back(new staticline("src port"));
-        childs.push_back(new staticline("dst port"));
-        childs.push_back(new staticline("sequence number"));
-        childs.push_back(new staticline("acknoledge number"));
-        childs.push_back(new staticline("window size"));
-        childs.push_back(new staticline("flags"));
-        childs.push_back(new staticline("checksum"));
+        childs.push_back(new staticline(
+            fs("type   : 0x%04x    ", ntohs(hdr->type)).c_str() ));
+        childs.push_back(new staticline(
+            fs("code   : 0x%04x    ", ntohs(hdr->code)).c_str() ));
+        childs.push_back(new staticline(
+            fs("cksum  : 0x%04x    ", ntohs(hdr->checksum )    ).c_str() ));
     }
     std::string to_string() { return "Internet Control Messaging Protocol"; }
     size_t headerlen() { return sizeof(slankdev::icmp); }
