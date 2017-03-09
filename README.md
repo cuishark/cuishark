@@ -2,7 +2,7 @@
 # cuishark
 A protocol analyzer like wireshark on CUI/TUI
 
-![screenshot](./imgs/ss0.png)
+![screenshot](./imgs/ss1.png)
 
 
 ## Usage
