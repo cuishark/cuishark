@@ -26,4 +26,5 @@ lo:
 wlan:
 	sudo $(GDB) ./$(TARGET) net $(WLN)
 
-
+install:
+	cp $(TARGET) /usr/local/bin/$(TARGET)
