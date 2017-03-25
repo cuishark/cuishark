@@ -3,6 +3,8 @@
 
 A protocol analyzer like wireshark on CUI/TUI
 
+- master [![Build Status](https://travis-ci.org/slankdev/cuishark.svg?branch=master)](https://travis-ci.org/slankdev/cuishark)
+
 ![screenshot](./imgs/ss1.png)
 
 ## Description
