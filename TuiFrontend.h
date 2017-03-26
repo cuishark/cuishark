@@ -20,8 +20,8 @@ enum FocusState {
 };
 
 class TuiFrontend {
-  FocusState fstate;
  public:
+  static FocusState fstate;
   PacketListPane  pane1;
   ToggleListPane  pane2;
   TextPane        pane3;
@@ -64,10 +64,11 @@ void TuiFrontend::focuse_sw()
   }
 }
 
+FocusState TuiFrontend::fstate = PANE1;
+
 #define sublines (LINES/3)
 TuiFrontend::TuiFrontend()
-  : fstate(PANE1)
-  , pane1(0, sublines*0+2, COLS, sublines-2)
+  : pane1(0, sublines*0+2, COLS, sublines-2)
   , pane2(0, sublines*1+2, COLS, sublines-2)
   , pane3(0, sublines*2+2, COLS, sublines-2)
   , sline(0, sublines*3, COLS, this)
@@ -88,12 +89,14 @@ TuiFrontend::TuiFrontend()
   while (s.size() < COLS-1) s += ' ';
   mvprintw(sublines*2+1, 0, s.c_str());
 
-  attron(A_REVERSE);
+  attroff(A_REVERSE);
 
   pane1.init(stdscr);
   pane2.init(stdscr);
   pane3.init(stdscr);
   sline.init(stdscr);
+
+  wrefresh(stdscr);
 }
 TuiFrontend::~TuiFrontend() {}
 void TuiFrontend::init()
@@ -163,6 +166,100 @@ void Statusline::refresh()
   static size_t cnt = 0;
   mvwprintw(win, 0, 0, "%-5zd: %s", cnt, sss.c_str());
   cnt ++;
+  wrefresh(win);
+}
+
+
+void PacketListPane::refresh()
+{
+  for (size_t i=start_idx, count=0; i<packets.size() && count<h; i++, count++) {
+    if (i == cursor && TuiFrontend::fstate == PANE1) {
+      wattron(win, A_BOLD);
+      wattron(win, A_UNDERLINE);
+    }
+
+    std::string s = packets[i]->to_str();
+    while (s.size() < this->w) s += ' ';
+    mvwprintw(win, count, 0, "%s", s.c_str());
+
+    if (i == cursor && TuiFrontend::fstate == PANE1) {
+      wattroff(win, A_BOLD);
+      wattroff(win, A_UNDERLINE);
+    }
+    clrtoeol();
+  }
+  wrefresh(win);
+}
+
+
+void ToggleListPane::refresh()
+{
+  if (!lines) return ;
+
+  size_t count = 0;
+  for (size_t i=start_idx; i<lines->size() && count<h; i++, count++) {
+    if (i == cursor && TuiFrontend::fstate == PANE2) {
+      wattron(win, A_BOLD);
+      wattron(win, A_UNDERLINE);
+    }
+
+    std::string s = lines->at(i)->to_string();
+    while (s.size() < this->w) s += ' ';
+    mvwprintw(win, count, 0, "%s", s.c_str());
+    clrtoeol();
+
+    if (i == cursor && TuiFrontend::fstate == PANE2) {
+      wattroff(win, A_BOLD);
+      wattroff(win, A_UNDERLINE);
+    }
+
+    if (lines->at(i)->is_close() == false) {
+      for (size_t j=0; j<lines->at(i)->lines.size(); j++) {
+        count++;
+        std::string s = lines->at(i)->lines[j];
+        while (s.size() < this->w) s += ' ';
+        mvwprintw(win, count, 0, "  %s", s.c_str());
+      }
+    }
+  }
+
+  /* fill space */
+  std::string ls;
+  while (ls.size() < this->w) ls += ' ';
+  for (; count<h; count++) mvwprintw(win, count, 0, "%s", ls.c_str());
+
+  wrefresh(win);
+}
+
+
+void TextPane::refresh()
+{
+  if (!lines) return ; // TODO: erase
+
+  size_t count = 0;
+  for (size_t i=start_idx ; i<lines->size() && count<h; i++, count++) {
+    if (i == cursor && TuiFrontend::fstate == PANE3) {
+      wattron(win, A_BOLD);
+      wattron(win, A_UNDERLINE);
+    }
+
+    std::string s = lines->at(i);
+    while (s.size() < this->w) s += ' ';
+    mvwprintw(win, count, 0, "%s", s.c_str());
+
+    if (i == cursor && TuiFrontend::fstate == PANE3) {
+      wattroff(win, A_BOLD);
+      wattroff(win, A_UNDERLINE);
+    }
+
+    clrtoeol();
+  }
+
+  /* fill space */
+  std::string ls;
+  while (ls.size() < this->w) ls += ' ';
+  for (; count<h; count++) mvwprintw(win, count, 0, "%s", ls.c_str());
+
   wrefresh(win);
 }
 

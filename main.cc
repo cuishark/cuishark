@@ -124,7 +124,7 @@ int	main(int argc, char** argv)
         pcapfd.close();
         fds[1].fd = -1;
       }
-      fe.sline.refresh();
+      fe.refresh();
     }
 	}
 	endwin();
