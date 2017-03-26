@@ -41,7 +41,6 @@ class Pcap : public slankdev::pcap {
 };
 
 
-
 enum inputmode {
   NONE,
   PCAP,
@@ -51,11 +50,15 @@ enum inputmode {
 class OptParser {
   inputmode mode_;
   std::string inputname_;
+  std::string filter_;
+  bool autoscroll_;
+  bool filter_on_;
  public:
-  OptParser(int argc, char** argv) : mode_(NONE)
+  OptParser(int argc, char** argv)
+    : mode_(NONE), autoscroll_(false), filter_on_(false)
   {
     int res;
-    while ((res = getopt(argc, argv, "r:i:")) != -1) {
+    while ((res = getopt(argc, argv, "r:i:f:a")) != -1) {
       switch (res) {
         case 'r':
           this->mode_      = PCAP;
@@ -65,6 +68,13 @@ class OptParser {
           this->mode_      = NETIF;
           this->inputname_ = optarg;
           break;
+        case 'f':
+          filter_on_  = true;
+          filter_ = optarg;
+          break;
+        case 'a':
+          autoscroll_ = true;
+          break;
         default:
           exit(-1);
       }
@@ -72,12 +82,19 @@ class OptParser {
   }
   inputmode mode() const { return mode_; }
   const std::string& inputname() const { return inputname_; }
+  const std::string& filter()   const { return filter_; }
+  bool autoscroll() const { return autoscroll_; }
+  bool filter_on() const { return filter_on_; }
 };
 
 
 void usage(const char* progname)
 {
-  printf("Usage: %s [-r PCAPFILE] [-i NETIF] \n", progname);
+  printf("Usage: %s [a] [-r PCAPFILE] [-i NETIF] [-f FilterSyntax] \n", progname);
+  printf("   -r PCAPFILE -- input interface is pcapfile\n");
+  printf("   -i NETIF    -- input interface is network interface\n");
+  printf("   -f SYNTAX   -- compile and use PCAP-CAPTHRE-FILTER \n");
+  printf("   -a          -- automaticaly to scroll\n");
 }
 
 
@@ -99,6 +116,17 @@ int	main(int argc, char** argv)
       break;
   }
 
+  if (opt.filter_on()) {
+    struct bpf_program fp;
+    try {
+      pcapfd.compile(&fp, opt.filter().c_str(), 0, 0);
+      pcapfd.setfilter(&fp);
+    } catch (std::exception& e) {
+      fprintf(stderr, e.what());
+      return -1;
+    }
+  }
+
   TuiFrontend::init();
   TuiFrontend fe;
   pcapfd.register_frontend(&fe);
@@ -117,14 +145,17 @@ int	main(int argc, char** argv)
       fe.key_input(wgetch(stdscr));
       fe.refresh();
     } else if (fds[1].revents & POLLIN) {
-      packet_recv_count ++;
       try {
+
+        packet_recv_count ++;
         pcapfd.next();
+        fe.refresh();
+        if (opt.autoscroll()) fe.pane1.cursor_down();
+
       } catch (std::exception& e) {
         pcapfd.close();
         fds[1].fd = -1;
       }
-      fe.refresh();
     }
 	}
 	endwin();
