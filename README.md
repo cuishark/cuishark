@@ -8,6 +8,8 @@ A protocol analyzer like wireshark on CUI/TUI
 
 ![screenshot](./imgs/ss1.png)
 
+
+
 ## Description
 
 This is an implementation like a wireshark on CUI/TUI.  I think using Wireshark
@@ -15,10 +17,10 @@ on GUI is really troublesome. So, I wish that using Cuishark is effortless and,
 speedy. Cuishark can be controlled by VI-like commands. (ex, hjkl)
 
 
+
 ## Usage
 
-running ``cuishark`` prints Usage.  If you want to watch help, command ``?``
-prints help message while running.
+running ``cuishark`` prints Usage.
 
 ```
 $ git clone https://github.com/slankdev/cuishark.git
@@ -27,6 +29,16 @@ $ make
 $ sudo ./cuishark net eth0           // network-interface
 $ sudo ./cuishark pcap input.pcap    // pcap-file-interface
 ```
+
+While running, user can use following commands.
+
+| Command         | Description         |
+|:---------------:|:-------------------:|
+| j               | cursor down         |
+| k               | cursor up           |
+| &lt;Tab&gt;     | switch pane         |
+| &lt;Space&gt;   | Open/Close element  |
+
 
 
 ## Support Interface
@@ -52,12 +64,12 @@ $ sudo apt install libpcap-dev libncurses5
 
 ## Version
 
-Current Stable Version is v0.0.
+Current stable version is v0.1.
 
  - v0.0 [![Build Status](https://travis-ci.org/slankdev/cuishark.svg?branch=v0.0)](https://travis-ci.org/slankdev/cuishark)
- - v0.1 <---- Developing now
-    - support differential drawing
-		- using ncurses-APIs more
+ - v0.1 [![Build Status](https://travis-ci.org/slankdev/cuishark.svg?branch=v0.1)](https://travis-ci.org/slankdev/cuishark)
+   - support differential drawing
+   - using ncurses-APIs more
  - v1.0 (Support Wireshark Display Filter)
 
 I developed v0.0 with ncurses and c++11. However many implementation don't use
@@ -69,4 +81,6 @@ recommended-APIs of ncurses as much as possible.
 ## License
 
 MIT
+
+see LICENCE.
 

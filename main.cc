@@ -8,6 +8,7 @@
 #include <slankdev/pcap.h>
 #include "TuiFrontend.h"
 #include "Cuishark.h"
+#include "Misc.h"
 
 
 
@@ -58,7 +59,7 @@ class OptParser {
     : mode_(NONE), autoscroll_(false), filter_on_(false)
   {
     int res;
-    while ((res = getopt(argc, argv, "r:i:f:a")) != -1) {
+    while ((res = getopt(argc, argv, "r:i:f:avh")) != -1) {
       switch (res) {
         case 'r':
           this->mode_      = PCAP;
@@ -75,8 +76,17 @@ class OptParser {
         case 'a':
           autoscroll_ = true;
           break;
+        case 'v':
+          version();
+          exit(0);
+          break;
+        case 'h':
+          usage(argv[0]);
+          exit(0);
+          break;
         default:
           exit(-1);
+          break;
       }
     }
   }
@@ -86,16 +96,6 @@ class OptParser {
   bool autoscroll() const { return autoscroll_; }
   bool filter_on() const { return filter_on_; }
 };
-
-
-void usage(const char* progname)
-{
-  printf("Usage: %s [a] [-r PCAPFILE] [-i NETIF] [-f FilterSyntax] \n", progname);
-  printf("   -r PCAPFILE -- input interface is pcapfile\n");
-  printf("   -i NETIF    -- input interface is network interface\n");
-  printf("   -f SYNTAX   -- compile and use PCAP-CAPTHRE-FILTER \n");
-  printf("   -a          -- automaticaly to scroll\n");
-}
 
 
 int	main(int argc, char** argv)
