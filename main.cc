@@ -7,11 +7,11 @@
 #include <slankdev/poll.h>
 #include <slankdev/pcap.h>
 #include "TuiFrontend.h"
+#include "Cuishark.h"
 
 
 
-size_t packet_recv_count = 0;
-
+CuisharkInfo info;
 
 class Pcap : public slankdev::pcap {
   TuiFrontend* front;
@@ -105,9 +105,11 @@ int	main(int argc, char** argv)
   switch (opt.mode()) {
     case PCAP:
       pcapfd.open_offline(opt.inputname().c_str());
+      info.interface = opt.inputname();
       break;
     case NETIF:
       pcapfd.open_live(opt.inputname().c_str());
+      info.interface = opt.inputname();
       break;
     default:
       fprintf(stderr, "input interface is not specilied.\n");
@@ -125,6 +127,7 @@ int	main(int argc, char** argv)
       fprintf(stderr, e.what());
       return -1;
     }
+    info.filterstring = opt.filter();
   }
 
   TuiFrontend::init();
@@ -147,7 +150,7 @@ int	main(int argc, char** argv)
     } else if (fds[1].revents & POLLIN) {
       try {
 
-        packet_recv_count ++;
+        info.nb_packet_recv ++;
         pcapfd.next();
         fe.refresh();
         if (opt.autoscroll()) fe.pane1.cursor_down();
