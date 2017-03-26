@@ -70,9 +70,6 @@ ToggleListPane::ToggleListPane(size_t _x, size_t _y, size_t _w, size_t _h)
   : PaneInterface(_x, _y, _w, _h), lines(nullptr), cursor(0), start_idx(0) {}
 
 
-/*
- * XXX TODO: visualization has Fatal BUG
- */
 void ToggleListPane::refresh()
 {
   if (lines == nullptr) return ;
@@ -100,7 +97,6 @@ void ToggleListPane::refresh()
 
   /* fill space */
   std::string ls;
-  count ++;
   while (ls.size() < this->w) ls += ' ';
   for (; count<h; count++) mvwprintw(win, count, 0, "%s", ls.c_str());
 
