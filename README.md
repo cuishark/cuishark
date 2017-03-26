@@ -4,7 +4,7 @@
 
 A protocol analyzer like wireshark on CUI/TUI
 
-[![Build Status](https://travis-ci.org/slankdev/cuishark.svg?branch=master)](https://travis-ci.org/slankdev/cuishark)
+master branch [![Build Status](https://travis-ci.org/slankdev/cuishark.svg?branch=master)](https://travis-ci.org/slankdev/cuishark)
 
 ![screenshot](./imgs/ss1.png)
 
