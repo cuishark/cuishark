@@ -68,4 +68,3 @@ recommended-APIs of ncurses as much as possible.
 
 MIT
 
-
