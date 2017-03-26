@@ -1,4 +1,7 @@
 sudo: false
+branches:
+  except:
+  - develop
 language: cpp
 compiler:
 - clang++
