@@ -64,14 +64,32 @@ void TuiFrontend::focuse_sw()
   }
 }
 
-#define sublines (LINES/3-1)
+#define sublines (LINES/3)
 TuiFrontend::TuiFrontend()
   : fstate(PANE1)
-  , pane1(0, sublines*0+1, COLS, sublines-1)
-  , pane2(0, sublines*1  , COLS, sublines  )
-  , pane3(0, sublines*2  , COLS, sublines  )
-  , sline(0, sublines*3+1, COLS, this)
+  , pane1(0, sublines*0+2, COLS, sublines-2)
+  , pane2(0, sublines*1+2, COLS, sublines-2)
+  , pane3(0, sublines*2+2, COLS, sublines-2)
+  , sline(0, sublines*3, COLS, this)
 {
+  attron(A_REVERSE);
+  std::string s;
+
+  s = slankdev::fs("%-5s %-13s %-20s %-20s %-6s %5s %-10s",
+              "No.", "Time", "Source", "Destination", "Proto", "Len", "Info");
+  while (s.size() < COLS-1) s += ' ';
+  mvprintw(sublines*0+1, 0, s.c_str());
+
+  s = "Protocol Details";
+  while (s.size() < COLS-1) s += ' ';
+  mvprintw(sublines*1+1, 0, s.c_str());
+
+  s = "Binary Details";
+  while (s.size() < COLS-1) s += ' ';
+  mvprintw(sublines*2+1, 0, s.c_str());
+
+  attron(A_REVERSE);
+
   pane1.init(stdscr);
   pane2.init(stdscr);
   pane3.init(stdscr);
