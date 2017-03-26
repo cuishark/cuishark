@@ -71,7 +71,7 @@ $ sudo apt install libpcap-dev libncurses5
 
 
 
-## Version
+## Release
 
 Current stable version is v0.1.
 
