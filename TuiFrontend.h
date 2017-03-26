@@ -106,19 +106,6 @@ void TuiFrontend::init()
   noecho();
   scrollok(stdscr, false);
 }
-void TuiFrontend::refresh()
-{
-  if (!pane1.packets.empty()) {
-    pane1.refresh();
-    size_t cur = pane1.cur();
-    pane2.set_content(&pane1.packets.at(cur)->details);
-    pane3.set_content(&pane1.packets.at(cur)->binarys);
-  }
-
-  pane2.refresh();
-  pane3.refresh();
-  sline.refresh();
-}
 void TuiFrontend::key_input(char c)
 {
   if (c == '\t') {
@@ -145,6 +132,20 @@ void TuiFrontend::key_input(char c)
 }
 
 
+void TuiFrontend::refresh()
+{
+  if (!pane1.packets.empty()) {
+    pane1.refresh();
+    size_t cur = pane1.cur();
+    pane2.set_content(&pane1.packets.at(cur)->details);
+    pane3.set_content(&pane1.packets.at(cur)->binarys);
+
+    pane2.refresh();
+    pane3.refresh();
+  }
+
+  sline.refresh();
+}
 
 void Statusline::refresh()
 {
@@ -195,7 +196,7 @@ void PacketListPane::refresh()
 
 void ToggleListPane::refresh()
 {
-  if (!lines) return ;
+  assert(lines);
 
   size_t count = 0;
   for (size_t i=start_idx; i<lines->size() && count<h; i++, count++) {
@@ -237,7 +238,7 @@ void ToggleListPane::refresh()
 
 void TextPane::refresh()
 {
-  if (!lines) return ; // TODO: erase
+  assert(lines);
 
   size_t count = 0;
   for (size_t i=start_idx ; i<lines->size() && count<h; i++, count++) {
