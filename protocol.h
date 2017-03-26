@@ -13,8 +13,9 @@
 class Ethernet : public ToggleList_Element {
     const slankdev::ether* hdr;
     std::string msg;
+    static bool proto_is_close_;
 public:
-    Ethernet(const void* ptr, size_t len) : ToggleList_Element("TODO Ethernet"),
+    Ethernet(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::ether*>(ptr))
     {
         if (len < sizeof(slankdev::ether))
@@ -30,15 +31,24 @@ public:
     }
     std::string src() { return hdr->src.to_string(); }
     std::string dst() { return hdr->dst.to_string(); }
-    std::string to_string() { return msg; }
     size_t headerlen() { return sizeof(slankdev::ether); }
     uint16_t type() { return ntohs(hdr->type); }
+    virtual std::string to_string() const override { return msg; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
+
+
 
 class IP : public ToggleList_Element {
     const slankdev::ip* hdr;
+    static bool proto_is_close_;
 public:
-    IP(const void* ptr, size_t len) :ToggleList_Element("TODO IP"),
+    IP(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::ip*>(ptr))
     {
         if (len < sizeof(slankdev::ip))
@@ -58,17 +68,24 @@ public:
     }
     std::string src() { return hdr->src.to_string(); }
     std::string dst() { return hdr->dst.to_string(); }
-    std::string to_string() { return "Internet Protocol version 4"; }
     size_t headerlen() { return hdr->ihl << 2; }
     uint8_t protocol() { return hdr->proto; }
+    virtual std::string to_string() const override { return "Internet Protocol version 4"; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
 class ARP : public ToggleList_Element {
     const slankdev::arp* hdr;
     std::string msg;
+    static bool proto_is_close_;
 public:
-    ARP(const void* ptr, size_t len) :ToggleList_Element("TODO ARP"),
+    ARP(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::arp*>(ptr))
     {
         if (len < sizeof(slankdev::arp)) {
@@ -91,8 +108,14 @@ public:
         else if (op == 2) msg = "Address Resolution Protocol (Replay)" ;
         else throw slankdev::exception("Unsupport arp op");
     }
-    std::string to_string() { return msg; }
     size_t headerlen() { return sizeof(slankdev::arp); }
+    virtual std::string to_string() const override { return msg; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
@@ -115,8 +138,9 @@ public:
 
 class ICMP : public ToggleList_Element {
     const slankdev::icmp* hdr;
+    static bool proto_is_close_;
 public:
-    ICMP(const void* ptr, size_t len) :ToggleList_Element("TODO ICMP"),
+    ICMP(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::icmp*>(ptr))
     {
         if (len < sizeof(slankdev::tcp))
@@ -128,15 +152,22 @@ public:
     }
     uint8_t type() { return hdr->type; }
     uint8_t code() { return hdr->code; }
-    std::string to_string() { return "Internet Control Messaging Protocol"; }
     size_t headerlen() { return sizeof(slankdev::icmp); }
+    virtual std::string to_string() const override { return "Internet Control Messaging Protocol"; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
 class TCP : public ToggleList_Element {
     const slankdev::tcp* hdr;
+    static bool proto_is_close_;
 public:
-    TCP(const void* ptr, size_t len) :ToggleList_Element("TODO TCP"),
+    TCP(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::tcp*>(ptr))
     {
         if (len < sizeof(slankdev::tcp))
@@ -157,15 +188,22 @@ public:
     }
     uint16_t src() { return ntohs(hdr->sport); }
     uint16_t dst() { return ntohs(hdr->dport); }
-    std::string to_string() { return "Transration Control Protocol"; }
     size_t headerlen() { return hdr->data_off; }
+    virtual std::string to_string() const override { return "Transration Control Protocol"; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
 class UDP : public ToggleList_Element {
     const slankdev::udp* hdr;
+    static bool proto_is_close_;
 public:
-    UDP(const void* ptr, size_t len) :ToggleList_Element("TODO UDP"),
+    UDP(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::udp*>(ptr))
     {
         if (len < sizeof(slankdev::udp))
@@ -178,8 +216,14 @@ public:
     }
     uint16_t src() { return ntohs(hdr->src); }
     uint16_t dst() { return ntohs(hdr->dst); }
-    std::string to_string() { return "User Datagram Protocol"; }
     size_t headerlen() { return sizeof(slankdev::udp); }
+    virtual std::string to_string() const override { return "User Datagram Protocol"; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
@@ -187,8 +231,9 @@ public:
 class Binary : public ToggleList_Element {
     const void* ptr;
     size_t len;
+    static bool proto_is_close_;
 public:
-    Binary(const void* p, size_t l) : ToggleList_Element("TODO Binary"),
+    Binary(const void* p, size_t l) :
       ptr(p), len(l)
     {
         using namespace slankdev;
@@ -222,8 +267,21 @@ public:
             row  += n;
         }
     }
-    std::string to_string() { return "Binary Data"; }
+    virtual std::string to_string() const override { return "Binary Data"; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
 
+bool Ethernet::proto_is_close_ = true;
+bool IP::proto_is_close_ = true;
+bool ICMP::proto_is_close_ = true;
+bool ARP::proto_is_close_ = true;
+bool TCP::proto_is_close_ = true;
+bool UDP::proto_is_close_ = true;
+bool Binary::proto_is_close_ = true;
