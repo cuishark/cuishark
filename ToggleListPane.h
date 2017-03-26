@@ -11,17 +11,13 @@
 
 
 class ToggleList_Element {
-  std::string str;
  public:
   std::vector<std::string> lines;
-  static bool is_close;
-  static void toggle();
-  ToggleList_Element(std::string s);
-  virtual std::string to_str() const; // TODO: erase
+  virtual bool is_close() const = 0;
+  virtual void toggle() = 0;
+  virtual std::string to_string() const = 0;
 };
 
-bool ToggleList_Element::is_close = true;
-ToggleList_Element::ToggleList_Element(std::string s) : str(s) {}
 
 
 
@@ -65,22 +61,10 @@ void ToggleListPane::key_input(char c)
   } else if (c == 'k') {
     cursor_up();
   } else if (c == ' ') {
-    ToggleList_Element::toggle();
+    lines->at(cursor)->toggle();
   }
 }
 
-void ToggleList_Element::toggle()
-{
-  if (is_close) is_close = false;
-  else          is_close = true;
-}
-
-std::string ToggleList_Element::to_str() const
-{
-  std::string s = str;
-  s += is_close?" close":" opne";
-  return s;
-}
 
 ToggleListPane::ToggleListPane(size_t _x, size_t _y, size_t _w, size_t _h)
   : PaneInterface(_x, _y, _w, _h), lines(nullptr), cursor(0), start_idx(0) {}
@@ -97,14 +81,14 @@ void ToggleListPane::refresh()
   for (size_t i=start_idx; i<lines->size() && count<h; i++, count++) {
     if (i == cursor) wattron(win, A_REVERSE);
 
-    std::string s = lines->at(i)->to_str();
+    std::string s = lines->at(i)->to_string();
     while (s.size() < this->w) s += ' ';
     mvwprintw(win, count, 0, "%s", s.c_str());
     clrtoeol();
 
     if (i == cursor) wattroff(win, A_REVERSE);
 
-    if (lines->at(i)->is_close == false) {
+    if (lines->at(i)->is_close() == false) {
       for (size_t j=0; j<lines->at(i)->lines.size(); j++) {
         count++;
         std::string s = lines->at(i)->lines[j];
