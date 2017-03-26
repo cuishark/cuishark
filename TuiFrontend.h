@@ -10,8 +10,9 @@
 #include "ToggleListPane.h"
 
 #include "PacketListPane.h"
+#include "Cuishark.h"
 
-extern size_t packet_recv_count;
+extern CuisharkInfo info;
 
 enum FocusState {
   PANE1,
@@ -105,19 +106,6 @@ void TuiFrontend::init()
   noecho();
   scrollok(stdscr, false);
 }
-void TuiFrontend::refresh()
-{
-  if (!pane1.packets.empty()) {
-    pane1.refresh();
-    size_t cur = pane1.cur();
-    pane2.set_content(&pane1.packets.at(cur)->details);
-    pane3.set_content(&pane1.packets.at(cur)->binarys);
-  }
-
-  pane2.refresh();
-  pane3.refresh();
-  sline.refresh();
-}
 void TuiFrontend::key_input(char c)
 {
   if (c == '\t') {
@@ -144,28 +132,42 @@ void TuiFrontend::key_input(char c)
 }
 
 
+void TuiFrontend::refresh()
+{
+  if (!pane1.packets.empty()) {
+    pane1.refresh();
+    size_t cur = pane1.cur();
+    pane2.set_content(&pane1.packets.at(cur)->details);
+    pane3.set_content(&pane1.packets.at(cur)->binarys);
+
+    pane2.refresh();
+    pane3.refresh();
+  }
+
+  sline.refresh();
+}
 
 void Statusline::refresh()
 {
-  std::string ss;
-  switch (front->get_state()) {
-    case PANE1: ss = "PANE1"; break;
-    case PANE2: ss = "PANE2"; break;
-    case PANE3: ss = "PANE3"; break;
-    default: assert(false);
-  }
-  std::string sss = slankdev::fs("1[%2zd] 2[%2zd] 3[%2zd] focus[%s] packetrecv[%5zd] msg[%s]",
-      front->pane1.cur(),
-      front->pane2.cur(),
-      front->pane3.cur(),
-      ss.c_str(),
-      packet_recv_count,
-      str.c_str()
-      );
+  std::string sss = slankdev::fs(
+      "%s     Packets:%-5zd    IF[%s]     Filter[%s]",
+      "CuiShark by @slankdev",
+      info.nb_packet_recv,
+      info.interface.c_str(),
+      info.filterstring.c_str()
+  );
 
+#ifdef DEBUG
   static size_t cnt = 0;
-  mvwprintw(win, 0, 0, "%-5zd: %s", cnt, sss.c_str());
-  cnt ++;
+  sss = std::to_string(cnt++) + " " + sss;
+#endif
+
+  while (sss.length() < COLS-1) sss += " ";
+
+  wattron(win, A_REVERSE);
+  mvwprintw(win, 0, 0, "%s", sss.c_str());
+  wattroff(win, A_REVERSE);
+
   wrefresh(win);
 }
 
@@ -194,7 +196,7 @@ void PacketListPane::refresh()
 
 void ToggleListPane::refresh()
 {
-  if (!lines) return ;
+  assert(lines);
 
   size_t count = 0;
   for (size_t i=start_idx; i<lines->size() && count<h; i++, count++) {
@@ -226,7 +228,9 @@ void ToggleListPane::refresh()
   /* fill space */
   std::string ls;
   while (ls.size() < this->w) ls += ' ';
-  for (; count<h; count++) mvwprintw(win, count, 0, "%s", ls.c_str());
+  for (; count<h; count++) {
+    mvwprintw(win, count, 0, "%s", ls.c_str());
+  }
 
   wrefresh(win);
 }
@@ -234,7 +238,7 @@ void ToggleListPane::refresh()
 
 void TextPane::refresh()
 {
-  if (!lines) return ; // TODO: erase
+  assert(lines);
 
   size_t count = 0;
   for (size_t i=start_idx ; i<lines->size() && count<h; i++, count++) {

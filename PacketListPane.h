@@ -38,6 +38,35 @@ class Packet {
   void analyze(const uint8_t* ptr, size_t len);
 };
 
+
+
+class PacketListPane : public PaneInterface {
+  size_t cursor;
+  size_t start_idx;
+ public:
+  std::vector<Packet*> packets;
+  PacketListPane(size_t _x, size_t _y, size_t _w, size_t _h);
+
+ public:
+  template<class... ARGS> void print(const char* fmt, ARGS... args);
+  virtual void refresh() override;
+  virtual void key_input(char c) override;
+  void cursor_down();
+  void cursor_up();
+
+ private:
+  void scroll_down() { start_idx++; }
+  void scroll_up()   { start_idx--; }
+
+ /* Debug Functions */
+ public:
+  size_t cur() const { return cursor; }
+  WINDOW* ww() { return win; }
+};
+
+
+
+
 void Packet::analyze(const uint8_t* ptr, size_t len)
 {
   using namespace slankdev;
@@ -171,33 +200,6 @@ Packet::Packet(const void* p, size_t l, uint64_t t, size_t n)
     row  += n;
   }
 }
-
-
-class PacketListPane : public PaneInterface {
-  size_t cursor;
-  size_t start_idx;
- public:
-  std::vector<Packet*> packets;
-  PacketListPane(size_t _x, size_t _y, size_t _w, size_t _h);
-
- public:
-  template<class... ARGS> void print(const char* fmt, ARGS... args);
-  virtual void refresh() override;
-  virtual void key_input(char c) override;
-  void cursor_down();
-  void cursor_up();
-
- private:
-  void scroll_down() { start_idx++; }
-  void scroll_up()   { start_idx--; }
-
- /* Debug Functions */
- public:
-  size_t cur() const { return cursor; }
-  WINDOW* ww() { return win; }
-};
-
-
 
 
 

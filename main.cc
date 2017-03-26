@@ -7,11 +7,12 @@
 #include <slankdev/poll.h>
 #include <slankdev/pcap.h>
 #include "TuiFrontend.h"
+#include "Cuishark.h"
+#include "Misc.h"
 
 
 
-size_t packet_recv_count = 0;
-
+CuisharkInfo info;
 
 class Pcap : public slankdev::pcap {
   TuiFrontend* front;
@@ -41,7 +42,6 @@ class Pcap : public slankdev::pcap {
 };
 
 
-
 enum inputmode {
   NONE,
   PCAP,
@@ -51,11 +51,15 @@ enum inputmode {
 class OptParser {
   inputmode mode_;
   std::string inputname_;
+  std::string filter_;
+  bool autoscroll_;
+  bool filter_on_;
  public:
-  OptParser(int argc, char** argv) : mode_(NONE)
+  OptParser(int argc, char** argv)
+    : mode_(NONE), autoscroll_(false), filter_on_(false)
   {
     int res;
-    while ((res = getopt(argc, argv, "r:i:")) != -1) {
+    while ((res = getopt(argc, argv, "r:i:f:avh")) != -1) {
       switch (res) {
         case 'r':
           this->mode_      = PCAP;
@@ -65,20 +69,33 @@ class OptParser {
           this->mode_      = NETIF;
           this->inputname_ = optarg;
           break;
+        case 'f':
+          filter_on_  = true;
+          filter_ = optarg;
+          break;
+        case 'a':
+          autoscroll_ = true;
+          break;
+        case 'v':
+          version();
+          exit(0);
+          break;
+        case 'h':
+          usage(argv[0]);
+          exit(0);
+          break;
         default:
           exit(-1);
+          break;
       }
     }
   }
   inputmode mode() const { return mode_; }
   const std::string& inputname() const { return inputname_; }
+  const std::string& filter()   const { return filter_; }
+  bool autoscroll() const { return autoscroll_; }
+  bool filter_on() const { return filter_on_; }
 };
-
-
-void usage(const char* progname)
-{
-  printf("Usage: %s [-r PCAPFILE] [-i NETIF] \n", progname);
-}
 
 
 int	main(int argc, char** argv)
@@ -88,15 +105,29 @@ int	main(int argc, char** argv)
   switch (opt.mode()) {
     case PCAP:
       pcapfd.open_offline(opt.inputname().c_str());
+      info.interface = opt.inputname();
       break;
     case NETIF:
       pcapfd.open_live(opt.inputname().c_str());
+      info.interface = opt.inputname();
       break;
     default:
       fprintf(stderr, "input interface is not specilied.\n");
       usage(argv[0]);
       return -1;
       break;
+  }
+
+  if (opt.filter_on()) {
+    struct bpf_program fp;
+    try {
+      pcapfd.compile(&fp, opt.filter().c_str(), 0, 0);
+      pcapfd.setfilter(&fp);
+    } catch (std::exception& e) {
+      fprintf(stderr, e.what());
+      return -1;
+    }
+    info.filterstring = opt.filter();
   }
 
   TuiFrontend::init();
@@ -117,14 +148,17 @@ int	main(int argc, char** argv)
       fe.key_input(wgetch(stdscr));
       fe.refresh();
     } else if (fds[1].revents & POLLIN) {
-      packet_recv_count ++;
       try {
+
+        info.nb_packet_recv ++;
         pcapfd.next();
+        fe.refresh();
+        if (opt.autoscroll()) fe.pane1.cursor_down();
+
       } catch (std::exception& e) {
         pcapfd.close();
         fds[1].fd = -1;
       }
-      fe.refresh();
     }
 	}
 	endwin();
