@@ -59,30 +59,6 @@ void TextPane::key_input(char c)
 }
 TextPane::TextPane(size_t _x, size_t _y, size_t _w, size_t _h)
   : PaneInterface(_x, _y, _w, _h), lines(nullptr), cursor(0), start_idx(0) {}
-void TextPane::refresh()
-{
-  if (!lines) return ; // TODO: erase
-
-  size_t count = 0;
-  for (size_t i=start_idx ; i<lines->size() && count<h; i++, count++) {
-    if (i == cursor) wattron(win, A_REVERSE);
-
-    std::string s = lines->at(i);
-    while (s.size() < this->w) s += ' ';
-    mvwprintw(win, count, 0, "%s", s.c_str());
-
-    if (i == cursor) wattroff(win, A_REVERSE);
-
-    clrtoeol();
-  }
-
-  /* fill space */
-  std::string ls;
-  while (ls.size() < this->w) ls += ' ';
-  for (; count<h; count++) mvwprintw(win, count, 0, "%s", ls.c_str());
-
-  wrefresh(win);
-}
 void TextPane::cursor_down()
 {
   if (!lines) return ; // TODO: erase

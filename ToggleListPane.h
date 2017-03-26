@@ -70,38 +70,6 @@ ToggleListPane::ToggleListPane(size_t _x, size_t _y, size_t _w, size_t _h)
   : PaneInterface(_x, _y, _w, _h), lines(nullptr), cursor(0), start_idx(0) {}
 
 
-void ToggleListPane::refresh()
-{
-  if (lines == nullptr) return ;
-
-  size_t count = 0;
-  for (size_t i=start_idx; i<lines->size() && count<h; i++, count++) {
-    if (i == cursor) wattron(win, A_REVERSE);
-
-    std::string s = lines->at(i)->to_string();
-    while (s.size() < this->w) s += ' ';
-    mvwprintw(win, count, 0, "%s", s.c_str());
-    clrtoeol();
-
-    if (i == cursor) wattroff(win, A_REVERSE);
-
-    if (lines->at(i)->is_close() == false) {
-      for (size_t j=0; j<lines->at(i)->lines.size(); j++) {
-        count++;
-        std::string s = lines->at(i)->lines[j];
-        while (s.size() < this->w) s += ' ';
-        mvwprintw(win, count, 0, "  %s", s.c_str());
-      }
-    }
-  }
-
-  /* fill space */
-  std::string ls;
-  while (ls.size() < this->w) ls += ' ';
-  for (; count<h; count++) mvwprintw(win, count, 0, "%s", ls.c_str());
-
-  wrefresh(win);
-}
 void ToggleListPane::cursor_down()
 {
   if (cursor + 1 < lines->size()) {

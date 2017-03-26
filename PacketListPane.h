@@ -230,20 +230,6 @@ PacketListPane::PacketListPane(size_t _x, size_t _y, size_t _w, size_t _h)
   : PaneInterface(_x, _y, _w, _h), cursor(0), start_idx(0) {}
 
 
-void PacketListPane::refresh()
-{
-  for (size_t i=start_idx, count=0; i<packets.size() && count<h; i++, count++) {
-    if (i == cursor) wattron(win, A_REVERSE);
-
-    std::string s = packets[i]->to_str();
-    while (s.size() < this->w) s += ' ';
-    mvwprintw(win, count, 0, "%s", s.c_str());
-
-    if (i == cursor) wattroff(win, A_REVERSE);
-    clrtoeol();
-  }
-  wrefresh(win);
-}
 void PacketListPane::cursor_down()
 {
   if (cursor + 1 < packets.size()) {
