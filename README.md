@@ -4,7 +4,7 @@
 
 A protocol analyzer like wireshark on CUI/TUI
 
-master [![Build Status](https://travis-ci.org/slankdev/cuishark.svg?branch=master)](https://travis-ci.org/slankdev/cuishark)
+[![Build Status](https://travis-ci.org/slankdev/cuishark.svg?branch=master)](https://travis-ci.org/slankdev/cuishark)
 
 ![screenshot](./imgs/ss1.png)
 
@@ -52,9 +52,9 @@ $ sudo apt install libpcap-dev libncurses5
 
 ## Version
 
-v0.0 [![Build Status](https://travis-ci.org/slankdev/cuishark.svg?branch=v0.0)](https://travis-ci.org/slankdev/cuishark)
+Current Stable Version is v0.0.
 
- - v0.0 <---- This version
+ - v0.0 [![Build Status](https://travis-ci.org/slankdev/cuishark.svg?branch=v0.0)](https://travis-ci.org/slankdev/cuishark)
  - v0.1 <---- Developing now
     - support differential drawing
 		- using ncurses-APIs more
