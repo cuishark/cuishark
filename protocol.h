@@ -3,61 +3,17 @@
 
 #include <algorithm>
 
-#include <slankdev/net/protocol.h>
+#include <slankdev/net_header.h>
 #include <slankdev/string.h>
 
-#include "pane.h"
-
-
-class line {
-public:
-    virtual ~line() {}
-    virtual std::string to_string() = 0;
-};
-
-
-class staticline : public line {
-    const std::string msg;
-public:
-    staticline(const std::string& str) : msg(str) {}
-    std::string to_string() override { return msg; }
-};
+#include "ToggleListPane.h"
 
 
 
-enum State {
-    OPEN,
-    CLOSE,
-};
-
-class Protoblock : public line {
-    State state;
-public:
-    std::vector<std::string> childs;
-    State get_state() const { return state; }
-
-    Protoblock() : state(CLOSE) {}
-    void openclose()
-    {
-        switch (state) {
-            case OPEN:
-                state = CLOSE;
-                break;
-            case CLOSE:
-                state = OPEN;
-                break;
-            default:
-                throw slankdev::exception("UNKNOWN state");
-        }
-    }
-};
-
-
-
-
-class Ethernet : public Protoblock {
+class Ethernet : public ToggleList_Element {
     const slankdev::ether* hdr;
     std::string msg;
+    static bool proto_is_close_;
 public:
     Ethernet(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::ether*>(ptr))
@@ -66,22 +22,31 @@ public:
             throw slankdev::exception("length is too small");
 
         using namespace slankdev;
-        childs.push_back(fs("Source       : %s", hdr->dst.to_string().c_str()));
-        childs.push_back(fs("Destination  : %s", hdr->src.to_string().c_str()));
-        childs.push_back(fs("type         : 0x%04x", htons(hdr->type))        );
+        lines.push_back(fs("Source       : %s", hdr->dst.to_string().c_str()));
+        lines.push_back(fs("Destination  : %s", hdr->src.to_string().c_str()));
+        lines.push_back(fs("type         : 0x%04x", htons(hdr->type))        );
 
         msg = fs("Ethernet, Src: %s, Dst: %s",
             hdr->src.to_string().c_str(), hdr->dst.to_string().c_str());
     }
     std::string src() { return hdr->src.to_string(); }
     std::string dst() { return hdr->dst.to_string(); }
-    std::string to_string() { return msg; }
     size_t headerlen() { return sizeof(slankdev::ether); }
     uint16_t type() { return ntohs(hdr->type); }
+    virtual std::string to_string() const override { return msg; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
-class IP : public Protoblock {
+
+
+class IP : public ToggleList_Element {
     const slankdev::ip* hdr;
+    static bool proto_is_close_;
 public:
     IP(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::ip*>(ptr))
@@ -89,29 +54,36 @@ public:
         if (len < sizeof(slankdev::ip))
             throw slankdev::exception("length is too small");
         using namespace slankdev;
-        childs.push_back(fs("version          : %u", hdr->ver)                     );
-        childs.push_back(fs("header length    : %u(%u) ", hdr->ihl, hdr->ihl<<2)   );
-        childs.push_back(fs("Type of service  : 0x%02x ", hdr->tos)                );
-        childs.push_back(fs("Data length      : %u  ", ntohs(hdr->len))            );
-        childs.push_back(fs("Identifer        : 0x%04x", ntohs(hdr->id ))          );
-        childs.push_back(fs("Offset           : 0x%04x", ntohs(hdr->off))          );
-        childs.push_back(fs("Time To Leave    : %u (0x%x) ", hdr->ttl, hdr->ttl)   );
-        childs.push_back(fs("Protocol         : 0x%x " , hdr->proto, hdr->proto)   );
-        childs.push_back(fs("Checksum         : 0x%04x ", ntohs(hdr->sum))         );
-        childs.push_back(fs("Source           : %s", hdr->src.to_string().c_str()) );
-        childs.push_back(fs("Destination      : %s", hdr->dst.to_string().c_str()) );
+        lines.push_back(fs("version          : %u", hdr->ver)                     );
+        lines.push_back(fs("header length    : %u(%u) ", hdr->ihl, hdr->ihl<<2)   );
+        lines.push_back(fs("Type of service  : 0x%02x ", hdr->tos)                );
+        lines.push_back(fs("Data length      : %u  ", ntohs(hdr->len))            );
+        lines.push_back(fs("Identifer        : 0x%04x", ntohs(hdr->id ))          );
+        lines.push_back(fs("Offset           : 0x%04x", ntohs(hdr->off))          );
+        lines.push_back(fs("Time To Leave    : %u (0x%x) ", hdr->ttl, hdr->ttl)   );
+        lines.push_back(fs("Protocol         : 0x%x " , hdr->proto, hdr->proto)   );
+        lines.push_back(fs("Checksum         : 0x%04x ", ntohs(hdr->sum))         );
+        lines.push_back(fs("Source           : %s", hdr->src.to_string().c_str()) );
+        lines.push_back(fs("Destination      : %s", hdr->dst.to_string().c_str()) );
     }
     std::string src() { return hdr->src.to_string(); }
     std::string dst() { return hdr->dst.to_string(); }
-    std::string to_string() { return "Internet Protocol version 4"; }
     size_t headerlen() { return hdr->ihl << 2; }
     uint8_t protocol() { return hdr->proto; }
+    virtual std::string to_string() const override { return "Internet Protocol version 4"; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
-class ARP : public Protoblock {
+class ARP : public ToggleList_Element {
     const slankdev::arp* hdr;
     std::string msg;
+    static bool proto_is_close_;
 public:
     ARP(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::arp*>(ptr))
@@ -122,44 +94,51 @@ public:
         using namespace slankdev;
         uint16_t op = ntohs(hdr->operation);
 
-        childs.push_back(fs("Hardware type   : 0x%04x", ntohs(hdr->hwtype))         );
-        childs.push_back(fs("Hardware len    : %d",     hdr->hwlen)                 );
-        childs.push_back(fs("Proto type      : 0x%04x", ntohs(hdr->ptype ))         );
-        childs.push_back(fs("Proto len       : %d",     hdr->plen)                  );
-        childs.push_back(fs("Operation       : %d", op)                             );
-        childs.push_back(fs("Source Hardware : %s", hdr->hwsrc.to_string().c_str()) );
-        childs.push_back(fs("Target Hardware : %s", hdr->hwdst.to_string().c_str()) );
-        childs.push_back(fs("Source Protocol : %s", hdr->psrc.to_string().c_str())  );
-        childs.push_back(fs("Target Protocol : %s", hdr->pdst.to_string().c_str())  );
+        lines.push_back(fs("Hardware type   : 0x%04x", ntohs(hdr->hwtype))         );
+        lines.push_back(fs("Hardware len    : %d",     hdr->hwlen)                 );
+        lines.push_back(fs("Proto type      : 0x%04x", ntohs(hdr->ptype ))         );
+        lines.push_back(fs("Proto len       : %d",     hdr->plen)                  );
+        lines.push_back(fs("Operation       : %d", op)                             );
+        lines.push_back(fs("Source Hardware : %s", hdr->hwsrc.to_string().c_str()) );
+        lines.push_back(fs("Target Hardware : %s", hdr->hwdst.to_string().c_str()) );
+        lines.push_back(fs("Source Protocol : %s", hdr->psrc.to_string().c_str())  );
+        lines.push_back(fs("Target Protocol : %s", hdr->pdst.to_string().c_str())  );
 
         if (op == 1)      msg = "Address Resolution Protocol (Request)";
         else if (op == 2) msg = "Address Resolution Protocol (Replay)" ;
         else throw slankdev::exception("Unsupport arp op");
     }
-    std::string to_string() { return msg; }
     size_t headerlen() { return sizeof(slankdev::arp); }
+    virtual std::string to_string() const override { return msg; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
 #if 0 // not support
-class IPv6 : public Protoblock {
+class IPv6 : public ToggleList_Element {
 public:
     IPv6(const void* ptr, size_t len)
     {
         if (len < sizeof(slankdev::))
             throw slankdev::exception("length is too small");
         using namespace slankdev;
-        childs.push_back("src address"));
-        childs.push_back("dst address"));
-        childs.push_back("protocol"));
+        lines.push_back("src address"));
+        lines.push_back("dst address"));
+        lines.push_back("protocol"));
     }
     std::string to_string() { return "Internet Protocol version 6"; }
 };
 #endif
 
 
-class ICMP : public Protoblock {
+class ICMP : public ToggleList_Element {
     const slankdev::icmp* hdr;
+    static bool proto_is_close_;
 public:
     ICMP(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::icmp*>(ptr))
@@ -167,19 +146,26 @@ public:
         if (len < sizeof(slankdev::tcp))
             throw slankdev::exception("length is too small");
         using namespace slankdev;
-        childs.push_back(fs("type   : 0x%04x", ntohs(hdr->type))     );
-        childs.push_back(fs("code   : 0x%04x", ntohs(hdr->code))     );
-        childs.push_back(fs("cksum  : 0x%04x", ntohs(hdr->checksum)) );
+        lines.push_back(fs("type   : 0x%04x", ntohs(hdr->type))     );
+        lines.push_back(fs("code   : 0x%04x", ntohs(hdr->code))     );
+        lines.push_back(fs("cksum  : 0x%04x", ntohs(hdr->checksum)) );
     }
     uint8_t type() { return hdr->type; }
     uint8_t code() { return hdr->code; }
-    std::string to_string() { return "Internet Control Messaging Protocol"; }
     size_t headerlen() { return sizeof(slankdev::icmp); }
+    virtual std::string to_string() const override { return "Internet Control Messaging Protocol"; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
-class TCP : public Protoblock {
+class TCP : public ToggleList_Element {
     const slankdev::tcp* hdr;
+    static bool proto_is_close_;
 public:
     TCP(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::tcp*>(ptr))
@@ -191,24 +177,31 @@ public:
         uint16_t dp = ntohs(hdr->dport);
         uint32_t s = ntohl(hdr->seq_num);
         uint32_t a = ntohl(hdr->ack_num);
-        childs.push_back( fs("Source Port : %u ", sp, sp).c_str()                    );
-        childs.push_back( fs("Dest port   : %u ", dp, dp).c_str()                    );
-        childs.push_back( fs("Seq number  : %u 0x%08x ", s, s).c_str()               );
-        childs.push_back( fs("Ack number  : %u 0x%08x ", a, a).c_str()               );
-        childs.push_back( fs("Data offset : 0x%02x    ", hdr->data_off ).c_str()     );
-        childs.push_back( fs("Flags       : 0x%02x    ", hdr->tcp_flags).c_str()     );
-        childs.push_back( fs("rx win      : 0x%04x    ", ntohs(hdr->rx_win)).c_str() );
-        childs.push_back( fs("cksum       : 0x%04x    ", ntohs(hdr->cksum )).c_str() );
+        lines.push_back( fs("Source Port : %u ", sp, sp).c_str()                    );
+        lines.push_back( fs("Dest port   : %u ", dp, dp).c_str()                    );
+        lines.push_back( fs("Seq number  : %u 0x%08x ", s, s).c_str()               );
+        lines.push_back( fs("Ack number  : %u 0x%08x ", a, a).c_str()               );
+        lines.push_back( fs("Data offset : 0x%02x    ", hdr->data_off ).c_str()     );
+        lines.push_back( fs("Flags       : 0x%02x    ", hdr->tcp_flags).c_str()     );
+        lines.push_back( fs("rx win      : 0x%04x    ", ntohs(hdr->rx_win)).c_str() );
+        lines.push_back( fs("cksum       : 0x%04x    ", ntohs(hdr->cksum )).c_str() );
     }
     uint16_t src() { return ntohs(hdr->sport); }
     uint16_t dst() { return ntohs(hdr->dport); }
-    std::string to_string() { return "Transration Control Protocol"; }
     size_t headerlen() { return hdr->data_off; }
+    virtual std::string to_string() const override { return "Transration Control Protocol"; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
-class UDP : public Protoblock {
+class UDP : public ToggleList_Element {
     const slankdev::udp* hdr;
+    static bool proto_is_close_;
 public:
     UDP(const void* ptr, size_t len) :
         hdr(reinterpret_cast<const slankdev::udp*>(ptr))
@@ -216,24 +209,32 @@ public:
         if (len < sizeof(slankdev::udp))
             throw slankdev::exception("length is too small");
         using namespace slankdev;
-        childs.push_back( fs("Source port      : %u\n", ntohs(hdr->src  )).c_str() );
-        childs.push_back( fs("Destination port : %u\n", ntohs(hdr->dst  )).c_str() );
-        childs.push_back( fs("Data length      : %u\n", ntohs(hdr->len  )).c_str() );
-        childs.push_back( fs("Checksum         : %u\n", ntohs(hdr->cksum)).c_str() );
+        lines.push_back( fs("Source port      : %u\n", ntohs(hdr->src  )).c_str() );
+        lines.push_back( fs("Destination port : %u\n", ntohs(hdr->dst  )).c_str() );
+        lines.push_back( fs("Data length      : %u\n", ntohs(hdr->len  )).c_str() );
+        lines.push_back( fs("Checksum         : %u\n", ntohs(hdr->cksum)).c_str() );
     }
     uint16_t src() { return ntohs(hdr->src); }
     uint16_t dst() { return ntohs(hdr->dst); }
-    std::string to_string() { return "User Datagram Protocol"; }
     size_t headerlen() { return sizeof(slankdev::udp); }
+    virtual std::string to_string() const override { return "User Datagram Protocol"; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
 
-class Binary : public Protoblock {
+class Binary : public ToggleList_Element {
     const void* ptr;
     size_t len;
+    static bool proto_is_close_;
 public:
-    Binary(const void* p, size_t l) : ptr(p), len(l)
+    Binary(const void* p, size_t l) :
+      ptr(p), len(l)
     {
         using namespace slankdev;
 
@@ -260,14 +261,27 @@ public:
                 if (i == 8) { line += "  "; }
                 uint8_t c = data[i];
             }
-            childs.push_back(line.c_str());
+            lines.push_back(line.c_str());
             bufferlen -= n;
             data += n;
             row  += n;
         }
     }
-    std::string to_string() { return "Binary Data"; }
+    virtual std::string to_string() const override { return "Binary Data"; }
+    virtual void toggle() override
+    {
+      if (proto_is_close_) proto_is_close_ = false;
+      else                 proto_is_close_ = true;
+    }
+    virtual bool is_close() const override { return proto_is_close_; }
 };
 
 
 
+bool Ethernet::proto_is_close_ = true;
+bool IP::proto_is_close_ = true;
+bool ICMP::proto_is_close_ = true;
+bool ARP::proto_is_close_ = true;
+bool TCP::proto_is_close_ = true;
+bool UDP::proto_is_close_ = true;
+bool Binary::proto_is_close_ = true;
