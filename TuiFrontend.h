@@ -227,7 +227,9 @@ void ToggleListPane::refresh()
   /* fill space */
   std::string ls;
   while (ls.size() < this->w) ls += ' ';
-  for (; count<h; count++) mvwprintw(win, count, 0, "%s", ls.c_str());
+  for (; count<h; count++) {
+    mvwprintw(win, count, 0, "%s", ls.c_str());
+  }
 
   wrefresh(win);
 }
