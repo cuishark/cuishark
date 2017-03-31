@@ -42,8 +42,8 @@ While running, user can use following commands.
 
 | Command         | Description         |
 |:---------------:|:-------------------:|
-| j               | cursor down         |
-| k               | cursor up           |
+| j,&lt;down&gt;  | cursor down         |
+| k,&lt;up&gt;    | cursor up           |
 | &lt;Tab&gt;     | switch pane         |
 | &lt;Space&gt;   | Open/Close element  |
 
