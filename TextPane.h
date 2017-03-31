@@ -19,7 +19,7 @@ class TextPane : public PaneInterface {
   virtual ~TextPane() {}
 
   virtual void refresh() override;
-  virtual void key_input(char c) override;
+  virtual void key_input(int c) override;
   void cursor_down();
   void cursor_up();
   void set_content(std::vector<std::string>* l);
@@ -49,11 +49,11 @@ void TextPane::set_content(std::vector<std::string>* l)
     lines = l;
   }
 }
-void TextPane::key_input(char c)
+void TextPane::key_input(int c)
 {
-  if (c == 'j') {
+  if (c == 'j' || c == KEY_DOWN) {
     cursor_down();
-  } else if (c == 'k') {
+  } else if (c == 'k' || c == KEY_UP) {
     cursor_up();
   }
 }

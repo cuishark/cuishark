@@ -35,7 +35,7 @@ class TuiFrontend {
   static void init();
   void refresh();
 
-  void key_input(char c);
+  void key_input(int c);
   void packet_input(const void* p, size_t l, uint64_t t);
 
   void focuse_sw();
@@ -104,9 +104,10 @@ void TuiFrontend::init()
 {
   initscr();
   noecho();
+  keypad(stdscr, true);
   scrollok(stdscr, false);
 }
-void TuiFrontend::key_input(char c)
+void TuiFrontend::key_input(int c)
 {
   if (c == '\t') {
     focuse_sw();
