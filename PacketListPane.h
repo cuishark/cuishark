@@ -50,7 +50,7 @@ class PacketListPane : public PaneInterface {
  public:
   template<class... ARGS> void print(const char* fmt, ARGS... args);
   virtual void refresh() override;
-  virtual void key_input(char c) override;
+  virtual void key_input(int c) override;
   void cursor_down();
   void cursor_up();
 
@@ -219,11 +219,11 @@ std::string Packet::to_str() const
 }
 
 
-void PacketListPane::key_input(char c)
+void PacketListPane::key_input(int c)
 {
-  if (c == 'j') {
+  if (c == 'j' || c == KEY_DOWN) {
     cursor_down();
-  } else if (c == 'k') {
+  } else if (c == 'k' || c == KEY_UP) {
     cursor_up();
   }
 }

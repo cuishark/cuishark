@@ -30,7 +30,7 @@ class PaneInterface {
   void init(WINDOW* _rw) { win = slankdev::subwin(_rw, h, w, y, x); }
   virtual ~PaneInterface() {}
   virtual void refresh() = 0;
-  virtual void key_input(char c) = 0;
+  virtual void key_input(int c) = 0;
 };
 
 
