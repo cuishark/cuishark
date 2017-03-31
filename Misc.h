@@ -51,6 +51,7 @@ inline void usage(const char* progname)
   printf("\n");
   printf("COMMANDS\n");
   printf("   j/k                   cursor down/up\n");
+  printf("   <down>/<up>           cursor down/up. It also be able to use. Thx @epcnt19\n");
   printf("   <Tab>                 switch pane \n");
   printf("   <Space>               open/close element\n");
 }
