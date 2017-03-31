@@ -182,7 +182,17 @@ public:
         lines.push_back( fs("Seq number  : %u 0x%08x ", s, s).c_str()               );
         lines.push_back( fs("Ack number  : %u 0x%08x ", a, a).c_str()               );
         lines.push_back( fs("Data offset : 0x%02x    ", hdr->data_off ).c_str()     );
-        lines.push_back( fs("Flags       : 0x%02x    ", hdr->tcp_flags).c_str()     );
+
+        uint8_t flags = hdr->tcp_flags;
+        std::string str = fs("Flags       : 0x%02x    ", flags);
+        if (flags & slankdev::TH_FIN	) str += "F";
+        if (flags & slankdev::TH_SYN	) str += "S";
+        if (flags & slankdev::TH_RST	) str += "R";
+        if (flags & slankdev::TH_PUSH ) str += "P";
+        if (flags & slankdev::TH_ACK	) str += "A";
+        if (flags & slankdev::TH_URG	) str += "U";
+
+        lines.push_back(str.c_str());
         lines.push_back( fs("rx win      : 0x%04x    ", ntohs(hdr->rx_win)).c_str() );
         lines.push_back( fs("cksum       : 0x%04x    ", ntohs(hdr->cksum )).c_str() );
     }

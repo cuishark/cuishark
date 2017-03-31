@@ -13,6 +13,16 @@ namespace slankdev {
 
 
 
+enum {
+ TH_FIN	 = 0x01,
+ TH_SYN	 = 0x02,
+ TH_RST	 = 0x04,
+ TH_PUSH = 0x08,
+ TH_ACK	 = 0x10,
+ TH_URG	 = 0x20,
+};
+
+
 
 #pragma pack(1)
 
