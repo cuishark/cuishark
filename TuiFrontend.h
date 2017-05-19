@@ -198,9 +198,14 @@ void PacketListPane::refresh()
 void ToggleListPane::refresh()
 {
   assert(lines);
+  werase(win);
 
   size_t count = 0;
   for (size_t i=start_idx; i<lines->size() && count<h; i++, count++) {
+    wmove(win, count, 0);
+    wclrtoeol(win);
+    wrefresh(win);
+
     if (i == cursor && TuiFrontend::fstate == PANE2) {
       wattron(win, A_BOLD);
       wattron(win, A_UNDERLINE);
@@ -209,7 +214,6 @@ void ToggleListPane::refresh()
     std::string s = lines->at(i)->to_string();
     while (s.size() < this->w) s += ' ';
     mvwprintw(win, count, 0, "%s", s.c_str());
-    clrtoeol();
 
     if (i == cursor && TuiFrontend::fstate == PANE2) {
       wattroff(win, A_BOLD);
@@ -219,18 +223,10 @@ void ToggleListPane::refresh()
     if (lines->at(i)->is_close() == false) {
       for (size_t j=0; j<lines->at(i)->lines.size(); j++) {
         count++;
-        std::string s = lines->at(i)->lines[j];
-        while (s.size() < this->w) s += ' ';
+        std::string& s = lines->at(i)->lines[j];
         mvwprintw(win, count, 0, "  %s", s.c_str());
       }
     }
-  }
-
-  /* fill space */
-  std::string ls;
-  while (ls.size() < this->w) ls += ' ';
-  for (; count<h; count++) {
-    mvwprintw(win, count, 0, "%s", ls.c_str());
   }
 
   wrefresh(win);
