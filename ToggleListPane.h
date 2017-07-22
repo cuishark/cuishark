@@ -13,6 +13,7 @@
 class ToggleList_Element {
  public:
   std::vector<std::string> lines;
+  virtual ~ToggleList_Element() {}
   virtual bool is_close() const = 0;
   virtual void toggle() = 0;
   virtual std::string to_string() const = 0;

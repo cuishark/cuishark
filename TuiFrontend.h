@@ -79,15 +79,15 @@ TuiFrontend::TuiFrontend()
 
   s = slankdev::fs("%-5s %-13s %-20s %-20s %-6s %5s %-10s",
               "No.", "Time", "Source", "Destination", "Proto", "Len", "Info");
-  while (s.size() < COLS-1) s += ' ';
+  while (s.size() < size_t(COLS-1)) s += ' ';
   mvprintw(sublines*0+1, 0, s.c_str());
 
   s = "Protocol Details";
-  while (s.size() < COLS-1) s += ' ';
+  while (s.size() < size_t(COLS-1)) s += ' ';
   mvprintw(sublines*1+1, 0, s.c_str());
 
   s = "Binary Details";
-  while (s.size() < COLS-1) s += ' ';
+  while (s.size() < size_t(COLS-1)) s += ' ';
   mvprintw(sublines*2+1, 0, s.c_str());
 
   attroff(A_REVERSE);
@@ -163,7 +163,7 @@ void Statusline::refresh()
   sss = std::to_string(cnt++) + " " + sss;
 #endif
 
-  while (sss.length() < COLS-1) sss += " ";
+  while (sss.length() < size_t(COLS-1)) sss += " ";
 
   wattron(win, A_REVERSE);
   mvwprintw(win, 0, 0, "%s", sss.c_str());

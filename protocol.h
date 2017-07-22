@@ -269,7 +269,7 @@ public:
             line += "   ";
             for (size_t i = 0; i < n; i++) {
                 if (i == 8) { line += "  "; }
-                uint8_t c = data[i];
+                // uint8_t c = data[i];
             }
             lines.push_back(line.c_str());
             bufferlen -= n;
