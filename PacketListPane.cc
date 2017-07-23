@@ -153,7 +153,7 @@ std::string Packet::to_str() const
 {
   using namespace slankdev;
   char sstr[1000];
-  sprintf(sstr, "%5zd %-13ld %-20s %-20s %-6s %5zd %-10s" , number, time,
+  sprintf(sstr, "%5zd %-13lld %-20s %-20s %-6s %5zd %-10s" , number, time,
           src.c_str(),
           dst.c_str(),
           protocol.c_str(), len,
