@@ -5,9 +5,9 @@
 #include <stddef.h>
 #include <string>
 #include <vector>
+#include "PaneInterface.h"
 
-#include "TextPane.h"
-#include "protocol.h"
+class ToggleList_Element;
 
 class Packet {
   std::vector<uint8_t> buf;
@@ -25,19 +25,12 @@ class Packet {
   std::vector<std::string> binarys;
 
   Packet(const void* p, size_t l, uint64_t t, size_t n);
-  virtual ~Packet()
-  {
-    for (size_t i=0; i<details.size(); i++) {
-      delete details[i];
-    }
-  }
-
+  virtual ~Packet();
   std::string to_str() const;
 
  private:
   void analyze(const uint8_t* ptr, size_t len);
 };
-
 
 
 class PacketListPane : public PaneInterface {
@@ -48,7 +41,6 @@ class PacketListPane : public PaneInterface {
   PacketListPane(size_t _x, size_t _y, size_t _w, size_t _h);
 
  public:
-  template<class... ARGS> void print(const char* fmt, ARGS... args);
   virtual void refresh() override;
   virtual void key_input(int c) override;
   void cursor_down();

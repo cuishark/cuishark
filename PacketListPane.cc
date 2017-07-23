@@ -1,7 +1,14 @@
 
 #include "PacketListPane.h"
+#include "protocol.h"
+#include "TextPane.h"
 
-
+Packet::~Packet()
+{
+  for (size_t i=0; i<details.size(); i++) {
+    delete details[i];
+  }
+}
 
 void Packet::analyze(const uint8_t* ptr, size_t len)
 {

@@ -12,14 +12,13 @@
 
 
 
-CuisharkInfo info;
 
 class Pcap : public slankdev::pcap {
   TuiFrontend* front;
  public:
   Pcap() : front(nullptr) {}
   virtual void recv(const void* ptr, struct pcap_pkthdr* hdr) override
-  { front->packet_input(ptr, hdr->len, hdr->ts.tv_sec); }
+  { front->packet_input(ptr, hdr->len, uint64_t(hdr->ts.tv_sec)); }
   void register_frontend(TuiFrontend* f) { front = f; }
   virtual void open_live(const char* ifname) override
   {
@@ -79,14 +78,11 @@ class OptParser {
         case 'v':
           version();
           exit(0);
-          break;
         case 'h':
           usage(argv[0]);
           exit(0);
-          break;
         default:
           exit(-1);
-          break;
       }
     }
   }
@@ -98,6 +94,7 @@ class OptParser {
 };
 
 
+CuisharkInfo info;
 int	main(int argc, char** argv)
 {
   Pcap pcapfd;
@@ -111,11 +108,10 @@ int	main(int argc, char** argv)
       pcapfd.open_live(opt.inputname().c_str());
       info.interface = opt.inputname();
       break;
-    default:
+    case NONE:
       fprintf(stderr, "input interface is not specilied.\n");
       usage(argv[0]);
       return -1;
-      break;
   }
 
   if (opt.filter_on()) {
@@ -155,13 +151,12 @@ int	main(int argc, char** argv)
         fe.refresh();
         if (opt.autoscroll()) fe.pane1.cursor_down();
 
-      } catch (std::exception& e) {
+      } catch (std::exception&) {
         pcapfd.close();
         fds[1].fd = -1;
       }
     }
 	}
-	endwin();
 }
 
 

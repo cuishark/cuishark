@@ -2,11 +2,10 @@
 
 #pragma once
 
+#include <vector>
+#include <string>
 #include <stdint.h>
 #include <stddef.h>
-#include <string>
-
-#include "ncurses.h"
 #include "PaneInterface.h"
 
 
