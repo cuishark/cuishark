@@ -1,7 +1,5 @@
 
 
-SRC = main.cc
-TARGET = cuishark
 
 CXX = clang++
 CXXFLAGS += -Wall -Werror
@@ -11,11 +9,25 @@ CXXFLAGS += -Wall -Werror
 CXXFLAGS += -std=c++11 -g -O0 -I./lib
 LDFLAGS  += -lncurses -lpcap
 
-all:
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SRC) $(LDFLAGS)
+SRC = main.cc \
+			TuiFrontend.cc \
+			TextPane.cc \
+			PacketListPane.cc \
+			ToggleListPane.cc \
+			protocol.cc
+OBJ = $(SRC:.cc=.o)
+TARGET = cuishark
+
+.cc.o:
+	@echo "CXX $@"
+	@$(CXX) $(CXXFLAGS) $< -c -o $@
+
+$(TARGET): $(OBJ)
+	@echo "LD $@"
+	@$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJ) $(LDFLAGS)
 
 clean:
-	rm -rf $(TARGET)
+	rm -rf $(TARGET) *.o
 
 install:
 	cp $(TARGET) /usr/local/bin/$(TARGET)
