@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <ncurses.h>
-#include "ncurses.h"
+#include "slankdev/ncurses.h"
 
 
 
