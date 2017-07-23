@@ -4,11 +4,11 @@
 CXX = clang++
 CXXFLAGS += -Wall -Werror
 ifeq ($(CXX), clang++)
-CXXFLAGS += -Weverything               \
-						-Wno-format-security       \
-						-Wno-c++98-compat          \
-						-Wno-c++98-compat-pedantic \
-						-Wno-format-nonliteral
+# CXXFLAGS += -Weverything
+# CXXFLAGS += -Wno-format-security       \
+# 						-Wno-c++98-compat          \
+# 						-Wno-c++98-compat-pedantic \
+# 						-Wno-format-nonliteral
 endif
 CXXFLAGS += -std=c++11 -g -O0 -I./lib
 LDFLAGS  += -lncurses -lpcap
