@@ -15,13 +15,11 @@ class Statusline {
   const size_t x;
   const size_t y;
   const size_t w;
-  TuiFrontend* front;
  public:
   Statusline(size_t _x, size_t _y, size_t _w, TuiFrontend* _f)
     : x(_x)
     , y(_y)
-    , w(_w)
-    , front(_f) {}
+    , w(_w) {}
   void init(WINDOW* rw) { win = slankdev::subwin(rw, 1, w, y, x); }
   void refresh(); /* defined in TuiFrontend.h */
 };

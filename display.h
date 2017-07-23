@@ -16,41 +16,6 @@ enum cursor_state {
 };
 
 
-class Statusline {
-    const size_t x;
-    const size_t y;
-    const size_t w;
-    const cursor_state& state;
-    slankdev::ncurses& screen;
-public:
-    Statusline(size_t ix, size_t iy, size_t iw, cursor_state& c,
-            slankdev::ncurses& sc)
-        : x(ix), y(iy), w(iw), state(c), screen(sc) {}
-    const char* state2str(cursor_state s)
-    {
-        switch (s) {
-            case LIST:   return "LIST   ";
-            case DETAIL: return "DETAIL ";
-            case BINARY: return "BINARY ";
-            default :    return "UNKNOWN";
-        }
-    }
-    void refresh()
-    {
-        move(y, x);
-        attron(A_REVERSE);
-        printline("[CUISHARK] pane=%s", state2str(state));
-        attroff(A_REVERSE);
-    }
-    template <class... Arg>
-    void printline(const char* fmt, Arg... arg)
-    {
-        move(y, x);
-        for (size_t i=x; i<w; i++) { screen.printw(" "); }
-        screen.mvprintw(y, x, fmt, arg...);
-    }
-};
-
 
 size_t a(size_t h) { return (h-1) % 3; }
 size_t m(size_t h) { return ((h-1)-((h-1)%3))/3; }

@@ -124,7 +124,7 @@ int	main(int argc, char** argv)
       pcapfd.compile(&fp, opt.filter().c_str(), 0, 0);
       pcapfd.setfilter(&fp);
     } catch (std::exception& e) {
-      fprintf(stderr, e.what());
+      fprintf(stderr, "%s", e.what());
       return -1;
     }
     info.filterstring = opt.filter();

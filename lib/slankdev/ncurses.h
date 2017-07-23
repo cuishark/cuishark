@@ -10,7 +10,7 @@ namespace slankdev {
 
 inline WINDOW* newwin(size_t nlines, size_t ncols, size_t begin_y, size_t begin_x)
 {
-  WINDOW* win = ::newwin(nlines, ncols, begin_y, begin_x);
+  WINDOW* win = ::newwin(int(nlines), int(ncols), int(begin_y), int(begin_x));
   if (win == NULL) {
     std::string errstr = slankdev::fs(
                       "newwin(nlines=%zd,ncols=%zd,y=%zd,x=%zd)",
@@ -22,7 +22,7 @@ inline WINDOW* newwin(size_t nlines, size_t ncols, size_t begin_y, size_t begin_
 
 inline WINDOW* subwin(WINDOW* win, size_t nlines, size_t ncols, size_t begin_y, size_t begin_x)
 {
-  WINDOW* sub = ::subwin(win, nlines, ncols, begin_y, begin_x);
+  WINDOW* sub = ::subwin(win, int(nlines), int(ncols), int(begin_y), int(begin_x));
   if (sub == NULL) {
     std::string errstr = slankdev::fs(
                       "subwin(nlines=%zd,ncols=%zd,y=%zd,x=%zd)",
