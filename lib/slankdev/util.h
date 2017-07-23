@@ -53,7 +53,7 @@ static uint16_t read_as_big_endian(const void* data)
 
 inline uint16_t checksum(const void* data, size_t len)
 {
-    uint32_t sum;
+    uint32_t sum = 0;
     const uint8_t* data_pointer = reinterpret_cast<const uint8_t*>(data);
 
     for (; len > 1; len-=2, data_pointer+=2) {

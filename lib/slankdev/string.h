@@ -6,11 +6,13 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <stdarg.h>
 
 
 namespace slankdev {
 
 
+#if 0
 template <class... ARGS>
 static inline std::string strfmt(const char* fmt, ARGS... args)
 {
@@ -18,8 +20,6 @@ static inline std::string strfmt(const char* fmt, ARGS... args)
     sprintf(str, fmt, args...);
     return str;
 }
-
-
 template <class... ARGS>
 static inline std::string fs(const char* fmt, ARGS... args)
 {
@@ -27,6 +27,26 @@ static inline std::string fs(const char* fmt, ARGS... args)
     sprintf(str, fmt, args...);
     return str;
 }
+#else
+static inline std::string strfmt(const char* fmt, ...)
+{
+  char str[1000];
+  va_list args;
+  va_start(args, fmt);
+  vsprintf(str, fmt, args);
+  va_end(args);
+  return str;
+}
+static inline std::string fs(const char* fmt, ...)
+{
+  char str[1000];
+  va_list args;
+  va_start(args, fmt);
+  vsprintf(str, fmt, args);
+  va_end(args);
+  return str;
+}
+#endif
 
 
 static inline std::vector<std::string> split(const std::string &str, char sep)

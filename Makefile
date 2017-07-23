@@ -3,7 +3,12 @@
 SRC = main.cc
 TARGET = cuishark
 
-CXXFLAGS += -std=c++11 -Wno-format-security -g -O0 -I./lib -Wall -Werror
+CXX = clang++
+CXXFLAGS += -Wall -Werror
+# ifeq ($(CXX), clang++)
+# CXXFLAGS += -Weverything
+# endif
+CXXFLAGS += -std=c++11 -g -O0 -I./lib
 LDFLAGS  += -lncurses -lpcap
 
 all:
