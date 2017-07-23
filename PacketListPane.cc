@@ -153,7 +153,11 @@ std::string Packet::to_str() const
 {
   using namespace slankdev;
   char sstr[1000];
+#if __APPLE__
   sprintf(sstr, "%5zd %-13llu %-20s %-20s %-6s %5zd %-10s" , number, time,
+#else
+  sprintf(sstr, "%5zd %-13lu %-20s %-20s %-6s %5zd %-10s" , number, time,
+#endif
           src.c_str(),
           dst.c_str(),
           protocol.c_str(), len,
