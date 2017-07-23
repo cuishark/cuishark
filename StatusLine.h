@@ -16,7 +16,7 @@ class Statusline {
   const size_t y;
   const size_t w;
  public:
-  Statusline(size_t _x, size_t _y, size_t _w, TuiFrontend* _f)
+  Statusline(size_t _x, size_t _y, size_t _w)
     : x(_x)
     , y(_y)
     , w(_w) {}

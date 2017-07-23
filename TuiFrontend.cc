@@ -29,7 +29,7 @@ TuiFrontend::TuiFrontend()
   : pane1(0, sublines*0+2, COLS, sublines-2)
   , pane2(0, sublines*1+2, COLS, sublines-2)
   , pane3(0, sublines*2+2, COLS, sublines-2)
-  , sline(0, sublines*3-1, COLS, this)
+  , sline(0, sublines*3-1, COLS)
 {
   attron(A_REVERSE);
   std::string s;

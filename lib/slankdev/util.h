@@ -40,7 +40,7 @@ inline void fdprintf(int fd, const char* fmt, ARGS... args)
 static uint16_t read_as_little_endian(const void* data)
 {
     const uint8_t* p = reinterpret_cast<const uint8_t*>(data);
-    return uint16_t(p[0]) | (uint16_t(p[1]) << 8);
+    return uint16_t(uint16_t(p[0]) | (uint16_t(p[1]) << 8));
 }
 #if 0
 /* Thanks @herumi, Isn't used yet */
@@ -72,7 +72,7 @@ inline uint16_t checksum(const void* data, size_t len)
     sum = sum & 0x0000ffff;
     sum = sum + overflowd;
 
-    return ~sum;
+    return uint16_t(~sum);
 }
 
 

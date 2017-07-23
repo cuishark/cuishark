@@ -7,7 +7,7 @@
 
 namespace slankdev {
 
-void poll(struct ::pollfd* fds, size_t nfds, int timeout)
+static inline void poll(struct ::pollfd* fds, size_t nfds, int timeout)
 {
   int res = ::poll(fds, nfds, timeout);
   if (res < 0) {

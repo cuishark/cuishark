@@ -1,5 +1,6 @@
 
 #include "ToggleListPane.h"
+#include "ncurses.h"
 
 
 /*

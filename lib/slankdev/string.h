@@ -13,30 +13,18 @@ namespace slankdev {
 
 
 #if 0
-template <class... ARGS>
-static inline std::string strfmt(const char* fmt, ARGS... args)
+static inline std::string fs(const char* fmt)
 {
-    char str[1000];
-    sprintf(str, fmt, args...);
-    return str;
+  return fmt;
 }
 template <class... ARGS>
-static inline std::string fs(const char* fmt, ARGS... args)
+static inline std::string fs(const char* fmt, ARGS const & ... args)
 {
     char str[1000];
     sprintf(str, fmt, args...);
     return str;
 }
 #else
-static inline std::string strfmt(const char* fmt, ...)
-{
-  char str[1000];
-  va_list args;
-  va_start(args, fmt);
-  vsprintf(str, fmt, args);
-  va_end(args);
-  return str;
-}
 static inline std::string fs(const char* fmt, ...)
 {
   char str[1000];
