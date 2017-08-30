@@ -66,9 +66,8 @@ We assume that users use Ubuntu. If you use another distribution, please change
 Package-Manager according to the environment.
 
 ```
-$ sudo apt install libpcap-dev libncurses5
+$ sudo apt install libpcap-dev libncurses5-dev
 ```
-
 
 
 ## Release
