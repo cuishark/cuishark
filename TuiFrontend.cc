@@ -31,6 +31,18 @@ TuiFrontend::TuiFrontend()
   , pane3(0, sublines*2+2, COLS, sublines-2)
   , sline(0, sublines*3-1, COLS)
 {
+  draw_panes_headers();
+
+  pane1.init(stdscr);
+  pane2.init(stdscr);
+  pane3.init(stdscr);
+  sline.init(stdscr);
+
+  wrefresh(stdscr);
+}
+
+void TuiFrontend::draw_panes_headers()
+{
   attron(A_REVERSE);
   std::string s;
 
@@ -48,14 +60,8 @@ TuiFrontend::TuiFrontend()
   mvprintw(sublines*2+1, 0, s.c_str());
 
   attroff(A_REVERSE);
-
-  pane1.init(stdscr);
-  pane2.init(stdscr);
-  pane3.init(stdscr);
-  sline.init(stdscr);
-
-  wrefresh(stdscr);
 }
+
 TuiFrontend::~TuiFrontend() {}
 void TuiFrontend::init()
 {
@@ -105,6 +111,23 @@ void TuiFrontend::refresh()
   sline.refresh();
 }
 
+void TuiFrontend::resize()
+{
+  endwin();
+  wrefresh(stdscr);
+  clear();
+
+  draw_panes_headers();
+
+  pane1.resize(stdscr, 0, sublines*0+2, COLS, sublines-2);
+  pane2.resize(stdscr, 0, sublines*1+2, COLS, sublines-2);
+  pane3.resize(stdscr, 0, sublines*2+2, COLS, sublines-2);
+  sline.resize(stdscr, 0, sublines*3-1, COLS);
+  wrefresh(stdscr);
+
+  refresh();
+}
+
 void Statusline::refresh()
 {
   std::string sss = slankdev::fs(
@@ -132,6 +155,11 @@ void Statusline::refresh()
 
 void PacketListPane::refresh()
 {
+  // Resizing to smaller window: make sure cursor is still visible
+  if (cursor - start_idx > h) {
+    start_idx = cursor - h + 1;
+  }
+
   for (size_t i=start_idx, count=0; i<packets.size() && count<h; i++, count++) {
     if (i == cursor && TuiFrontend::fstate == PANE1) {
       wattron(win, A_BOLD);
@@ -220,5 +248,3 @@ void TextPane::refresh()
 
   wrefresh(win);
 }
-
-

@@ -32,7 +32,18 @@ inline WINDOW* subwin(WINDOW* win, size_t nlines, size_t ncols, size_t begin_y, 
   return sub;
 }
 
+inline int delwin(WINDOW *win)
+{
+  int ret = ::delwin(win);
+  if (ret != OK) {
+    std::string errstr = slankdev::fs(
+                      "delwin(win=%p)",
+                                win);
+    throw slankdev::exception(errstr.c_str());
+  }
 
+  return 0;
+}
 
 } // namespace
 
