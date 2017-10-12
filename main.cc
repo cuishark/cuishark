@@ -9,8 +9,7 @@
 #include "TuiFrontend.h"
 #include "Cuishark.h"
 #include "Misc.h"
-
-
+#include <signal.h>
 
 
 class Pcap : public slankdev::pcap {
@@ -94,6 +93,15 @@ class OptParser {
 };
 
 
+TuiFrontend *fe;
+
+void handle_window_resize(int sig)
+{
+  if (fe)
+    fe->resize();
+}
+
+
 CuisharkInfo info;
 int	main(int argc, char** argv)
 {
@@ -127,10 +135,15 @@ int	main(int argc, char** argv)
   }
 
   TuiFrontend::init();
-  TuiFrontend fe;
-  pcapfd.register_frontend(&fe);
+  fe = new TuiFrontend();
+  pcapfd.register_frontend(fe);
 
-  fe.refresh();
+  struct sigaction sa;
+  memset(&sa, 0, sizeof(struct sigaction));
+  sa.sa_handler = handle_window_resize;
+  sigaction(SIGWINCH, &sa, NULL);
+
+  fe->refresh();
   struct pollfd fds[2];
   memset(fds, 0, sizeof(fds));
   fds[0].fd = fileno(stdin);
@@ -141,15 +154,16 @@ int	main(int argc, char** argv)
 	while (1) {
     slankdev::poll(fds, sizeof(fds)/sizeof(fds[0]), 100);
     if (fds[0].revents & POLLIN) {
-      fe.key_input(wgetch(stdscr));
-      fe.refresh();
+      fe->key_input(wgetch(stdscr));
+      fe->refresh();
     } else if (fds[1].revents & POLLIN) {
+
       try {
 
         info.nb_packet_recv ++;
         pcapfd.next();
-        fe.refresh();
-        if (opt.autoscroll()) fe.pane1.cursor_down();
+        fe->refresh();
+        if (opt.autoscroll()) fe->pane1.cursor_down();
 
       } catch (std::exception&) {
         pcapfd.close();
