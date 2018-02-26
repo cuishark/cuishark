@@ -14,6 +14,7 @@
 #include <wsutil/privileges.h>
 #include <epan/packet.h>
 #include <epan/addr_resolv.h>
+#include <epan/print.h>
 #include <cfile.h>
 #include "lib.h"
 
@@ -34,34 +35,39 @@ int main(int argc, char** argv)
 
   int err=0;
   gchar *err_info=nullptr;
-  {
-    if (cf_open(&cfile, filename, WTAP_TYPE_AUTO, false, &err) != CF_OK) {
-      exit(1);
-      // epan_cleanup();
-      // extcap_cleanup();
-      // exit_status = INVALID_FILE;
-      // goto clean_exit;
-    }
+  if (cf_open(&cfile, filename, WTAP_TYPE_AUTO, false, &err) != CF_OK) {
+    exit(1);
   }
 
   gint64 data_offset;
   if (wtap_read(cfile.provider.wth, &err, &err_info, &data_offset)) {
-    printf("slankdev\n");
-  }
-  printf("success\n");
 
-  // epan_register_plugin_types();
-  // scan_plugins();
-  // wtap_register_plugin_types();
-  // char* ret = init_progfile_dir(nullptr, nullptr);
+    guint32 cum_bytes;
+    frame_data fdlocal;
+    guint32 framenum = cfile.count + 1;
+    wtap_rec* rec = wtap_get_rec(cfile.provider.wth);
+    frame_data_init(&fdlocal, framenum, rec, data_offset, cum_bytes);
 
-#if 0
-  bool ret = epan_init(register_all_protocols, register_all_protocol_handoffs, NULL, NULL);
-  printf("%s\n", ret?"true":"false");
-  if (!ret) {
-    fprintf(stderr, "Error at epan_init\n");
-    return 2;
+    epan_dissect_t* edt = epan_dissect_new(cfile.epan, true, true);
+    frame_data_set_before_dissect(&fdlocal, &cfile.elapsed_time,
+        &cfile.provider.ref, cfile.provider.prev_dis);
+    cfile.provider.ref = &fdlocal;
+
+    const guchar* pd = wtap_get_buf_ptr(cfile.provider.wth);
+    epan_dissect_run(edt, cfile.cd_t, rec,
+                   frame_tvbuff_new(&cfile.provider, &fdlocal, pd),
+                   &fdlocal, NULL);
+
+    print_stream_t* print_stream = print_stream_text_stdio_new(stdout);
+    proto_tree_print(print_dissections_none, false, edt,
+        nullptr, print_stream);
+
+    frame_data_set_after_dissect(&fdlocal, &cum_bytes);
+    frame_data_destroy(&fdlocal);
+    printf("success\n");
+    return 0;
   }
-#endif
+  printf("false\n");
+  return 1;
 }
 
