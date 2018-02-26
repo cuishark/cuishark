@@ -1,7 +1,7 @@
 
 
 
-CXX = clang++
+CXX = g++
 CXXFLAGS += -Wall -Werror
 ifeq ($(CXX), clang++)
 # CXXFLAGS += -Weverything
