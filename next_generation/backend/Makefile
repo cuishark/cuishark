@@ -1,8 +1,10 @@
 
 LIBSLANKDEV := $(HOME)/git/libslankdev
-CXXFLAGS += -I$(LIBSLANKDEV) -std=c++11 -g -O0
-CXXFLAGS += `pkg-config wireshark --cflags`
-LDFLAGS  += `pkg-config wireshark --libs`
+CXXFLAGS += -std=c++11 -g -O0
+CXXFLAGS += -I$(LIBSLANKDEV)
+CXXFLAGS += -I/usr/local/include/wireshark
+CXXFLAGS += `pkg-config glib-2.0 --cflags`
+LDFLAGS  += `pkg-config glib-2.0 --libs`
 LDFLAGS  += -lwiretap -lwireshark -lwsutil
 
 SRC = main.cc
@@ -13,6 +15,9 @@ $(TARGET): $(OBJ)
 
 clean:
 	rm -f *.o *.out
+
+run:
+	sudo ./a.out
 
 include $(LIBSLANKDEV)/mk/rules.mk
 
