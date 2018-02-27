@@ -17,7 +17,7 @@ clean:
 	rm -f *.o *.out
 
 run:
-	sudo ./a.out
+	./a.out 2>/dev/null
 
 include $(LIBSLANKDEV)/mk/rules.mk
 

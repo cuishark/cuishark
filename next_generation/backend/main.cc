@@ -15,9 +15,13 @@
 #include <epan/packet.h>
 #include <epan/addr_resolv.h>
 #include <epan/print.h>
+#include <epan/epan_dissect.h>
 #include <cfile.h>
 #include "lib.h"
+#include "libws_debug.h"
+#include <slankdev/hexdump.h>
 
+#include "wrapper.h"
 
 int main(int argc, char** argv)
 {
@@ -39,16 +43,24 @@ int main(int argc, char** argv)
     exit(1);
   }
 
-  gint64 data_offset;
-  if (wtap_read(cfile.provider.wth, &err, &err_info, &data_offset)) {
+  epan_dissect_t* edt = epan_dissect_new(cfile.epan, true, true);
+  printf("edt: %p\n", edt);
 
+  while (true) {
+    gint64 data_offset;
+    bool ret = wtap_read(cfile.provider.wth, &err, &err_info, &data_offset);
+    if (!ret) {
+      printf("finish \n");
+      break;
+    }
     guint32 cum_bytes;
     frame_data fdlocal;
-    guint32 framenum = cfile.count + 1;
+    cfile.count ++;
+    guint32 framenum = cfile.count;
+    printf("framenum: %u \n", framenum);
     wtap_rec* rec = wtap_get_rec(cfile.provider.wth);
     frame_data_init(&fdlocal, framenum, rec, data_offset, cum_bytes);
 
-    epan_dissect_t* edt = epan_dissect_new(cfile.epan, true, true);
     frame_data_set_before_dissect(&fdlocal, &cfile.elapsed_time,
         &cfile.provider.ref, cfile.provider.prev_dis);
     cfile.provider.ref = &fdlocal;
@@ -62,12 +74,17 @@ int main(int argc, char** argv)
     proto_tree_print(print_dissections_none, false, edt,
         nullptr, print_stream);
 
+    /* print hex data */
+    tvbuff_t* tvb = libwireshark::edt_get_tvb(edt);
+    const uint8_t* ptr = libwireshark::tvb_get_ptr(tvb);
+    size_t len = libwireshark::tvb_get_len(tvb);
+    slankdev::hexdump(stdout, ptr, len);
+
+    epan_dissect_reset(edt);
     frame_data_set_after_dissect(&fdlocal, &cum_bytes);
     frame_data_destroy(&fdlocal);
-    printf("success\n");
-    return 0;
+    printf("\n\n");
   }
-  printf("false\n");
-  return 1;
+  epan_dissect_free(edt);
 }
 
