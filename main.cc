@@ -162,8 +162,8 @@ int	main(int argc, char** argv)
 
         info.nb_packet_recv ++;
         pcapfd.next();
-        fe->refresh();
         if (opt.autoscroll()) fe->pane1.cursor_down();
+        fe->refresh();
 
       } catch (std::exception&) {
         pcapfd.close();
