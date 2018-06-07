@@ -1,7 +1,7 @@
 
 package main
 
-import "github.com/cuishark/prototype/cgocuishark"
+import "github.com/cuishark/cuishark/cgocuishark"
 
 var (
   viewArr = []string{"v1", "v2", "v3"}

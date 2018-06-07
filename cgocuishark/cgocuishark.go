@@ -11,7 +11,6 @@ package cgocuishark
 #cgo LDFLAGS: -pthread -lgthread-2.0 -pthread -lglib-2.0
 #cgo LDFLAGS: -lwiretap -lwsutil -lz -lm -lpcap -lstdc++
 #include <cuishark.h>
-#include <hexdump.h>
 */
 import "C"
 import "bytes"
