@@ -6,7 +6,7 @@ import (
   "os"
   "encoding/hex"
   "github.com/jroimartin/gocui"
-  "github.com/cuishark/prototype/cgocuishark"
+  "github.com/cuishark/cuishark/cgocuishark"
 )
 
 func main() {

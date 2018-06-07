@@ -19,7 +19,7 @@ Packet makes us very happy.
 ```
 $ go get github.com/cuishark/cuishark
 $ cd $GOPATH/src/github.com/cuishark/cuishark
-$ git checkout proto-v0.2.0
+$ git checkout -b proto-v0.2.0 origin/proto-v0.2.0
 $ cd $GOPATH/src/github.com/cuishark/cuishark/cgocuishark && go install
 $ cd $GOPATH/src/github.com/cuishark/cuishark/cuishark && go install
 $ sudo cp $GOPATH/bin/cuishark /usr/local/bin
