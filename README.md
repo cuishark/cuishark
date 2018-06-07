@@ -1,7 +1,7 @@
 
 # Cuishark
 
-![](./misc/rec.gif)
+![](./misc/cuishark.gif)
 
 This is cuishark's versin 2.0 prototype.
 The old version of cuishark was fullscrached and not using wireshark's dissector.
