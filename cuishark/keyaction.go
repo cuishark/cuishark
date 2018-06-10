@@ -7,7 +7,7 @@ import (
 )
 
 func getpane_PacketList(g *gocui.Gui) (*gocui.View) {
-  view, err := g.View("v1")
+  view, err := g.View("PacketList")
   if err != nil {
     log.Panicln(err)
   }
@@ -15,7 +15,7 @@ func getpane_PacketList(g *gocui.Gui) (*gocui.View) {
 }
 
 func getpane_PacketDetail(g *gocui.Gui) (*gocui.View) {
-  view, err := g.View("v2")
+  view, err := g.View("PacketDetail")
   if err != nil {
     log.Panicln(err)
   }
@@ -23,7 +23,7 @@ func getpane_PacketDetail(g *gocui.Gui) (*gocui.View) {
 }
 
 func getpane_PacketByte(g *gocui.Gui) (*gocui.View) {
-  view, err := g.View("v3")
+  view, err := g.View("PacketByte")
   if err != nil {
     log.Panicln(err)
   }
@@ -44,13 +44,13 @@ func nextView(g *gocui.Gui, v *gocui.View) error {
 func page_top(g *gocui.Gui, v *gocui.View) error {
   nextIndex := (active) % len(viewArr)
   name := viewArr[nextIndex]
-  v2, err := g.View(name)
+  view, err := g.View(name)
   if err != nil {
     return err
   }
 
-  v2.SetOrigin(0, 0);
-  v2.SetCursor(0, 0);
+  view.SetOrigin(0, 0);
+  view.SetCursor(0, 0);
   return nil
 }
 
@@ -62,19 +62,19 @@ func switch_auto_scroll(g *gocui.Gui, v *gocui.View) error {
 func page_bottom(g *gocui.Gui, v *gocui.View) error {
   nextIndex := (active) % len(viewArr)
   name := viewArr[nextIndex]
-  v2, err := g.View(name)
+  view, err := g.View(name)
   if err != nil {
     return err
   }
 
-  _, height := v2.Size()
-  _, y0 := v2.Origin()
+  _, height := view.Size()
+  _, y0 := view.Origin()
   for ;; {
     for i:=0; i<height; i++ {
-      v2.MoveCursor(0, 1, false);
+      view.MoveCursor(0, 1, false);
     }
 
-    _, y1 := v2.Origin()
+    _, y1 := view.Origin()
     if (y1 == y0) {
       break
     } else {
@@ -87,14 +87,14 @@ func page_bottom(g *gocui.Gui, v *gocui.View) error {
 func page_up(g *gocui.Gui, v *gocui.View) error {
   nextIndex := (active) % len(viewArr)
   name := viewArr[nextIndex]
-  v2, err := g.View(name)
+  view, err := g.View(name)
   if err != nil {
     return err
   }
 
-  _, y := v2.Size()
+  _, y := view.Size()
   for i:=0; i<y; i++ {
-    v2.MoveCursor(0, -1, false);
+    view.MoveCursor(0, -1, false);
   }
   return nil
 }
@@ -102,14 +102,14 @@ func page_up(g *gocui.Gui, v *gocui.View) error {
 func page_down(g *gocui.Gui, v *gocui.View) error {
   nextIndex := (active) % len(viewArr)
   name := viewArr[nextIndex]
-  v2, err := g.View(name)
+  view, err := g.View(name)
   if err != nil {
     return err
   }
 
-  _, y := v2.Size()
+  _, y := view.Size()
   for i:=0; i<y; i++ {
-    v2.MoveCursor(0, 1, false);
+    view.MoveCursor(0, 1, false);
   }
   return nil
 }
@@ -117,12 +117,12 @@ func page_down(g *gocui.Gui, v *gocui.View) error {
 func scroll_up(g *gocui.Gui, v *gocui.View) error {
   nextIndex := (active) % len(viewArr)
   name := viewArr[nextIndex]
-  v2, err := g.View(name)
+  view, err := g.View(name)
   if err != nil {
     return err
   }
 
-  v2.MoveCursor(0, -1, false);
+  view.MoveCursor(0, -1, false);
   return nil
 }
 
@@ -134,12 +134,12 @@ func scroll_PacketList(g *gocui.Gui, dy int) {
 func scroll_down(g *gocui.Gui, v *gocui.View) error {
   nextIndex := (active) % len(viewArr)
   name := viewArr[nextIndex]
-  v2, err := g.View(name)
+  view, err := g.View(name)
   if err != nil {
     return err
   }
 
-  v2.MoveCursor(0, 1, false);
+  view.MoveCursor(0, 1, false);
   return nil
 }
 

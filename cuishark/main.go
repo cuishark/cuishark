@@ -21,18 +21,26 @@ func main() {
   g.SelFgColor = gocui.ColorGreen
   g.SetManagerFunc(layout)
 
-  if err := g.SetKeybinding("", gocui.KeyCtrlA, gocui.ModNone, switch_auto_scroll); err != nil { log.Panicln(err) }
-  if err := g.SetKeybinding("", 'g', gocui.ModNone, page_top); err != nil { log.Panicln(err) }
-  if err := g.SetKeybinding("", 'G', gocui.ModNone, page_bottom); err != nil { log.Panicln(err) }
-  if err := g.SetKeybinding("", gocui.KeyCtrlB, gocui.ModNone, page_up); err != nil { log.Panicln(err) }
-  if err := g.SetKeybinding("", gocui.KeyCtrlF, gocui.ModNone, page_down); err != nil { log.Panicln(err) }
-  if err := g.SetKeybinding("", gocui.KeyArrowUp, gocui.ModNone, scroll_up); err != nil { log.Panicln(err) }
-  if err := g.SetKeybinding("", gocui.KeyArrowDown, gocui.ModNone, scroll_down); err != nil { log.Panicln(err) }
-  if err := g.SetKeybinding("", 'j', gocui.ModNone, scroll_down); err != nil { log.Panicln(err) }
-  if err := g.SetKeybinding("", 'k', gocui.ModNone, scroll_up); err != nil { log.Panicln(err) }
-  if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil { log.Panicln(err) }
-  if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, nextView); err != nil { log.Panicln(err) }
-  if err := g.SetKeybinding("v2", gocui.KeySpace, gocui.ModNone, openclose_detail_pane); err != nil { log.Panicln(err) }
+  set_keybind(g, "", gocui.KeyCtrlA, gocui.ModNone, switch_auto_scroll)
+  set_keybind(g, "", 'g', gocui.ModNone, page_top)
+  set_keybind(g, "", 'G', gocui.ModNone, page_bottom)
+  set_keybind(g, "", gocui.KeyCtrlB, gocui.ModNone, page_up)
+  set_keybind(g, "", gocui.KeyCtrlF, gocui.ModNone, page_down)
+  set_keybind(g, "", gocui.KeyArrowUp, gocui.ModNone, scroll_up)
+  set_keybind(g, "", gocui.KeyArrowDown, gocui.ModNone, scroll_down)
+
+  set_keybind(g, "PacketList", 'j', gocui.ModNone, scroll_down)
+  set_keybind(g, "PacketList", 'k', gocui.ModNone, scroll_up)
+  set_keybind(g, "PacketDetail", 'j', gocui.ModNone, scroll_down)
+  set_keybind(g, "PacketDetail", 'k', gocui.ModNone, scroll_up)
+  set_keybind(g, "PacketByte", 'j', gocui.ModNone, scroll_down)
+  set_keybind(g, "PacketByte", 'k', gocui.ModNone, scroll_up)
+
+  // set_keybind(g, "", gocui.KeyCtrlC, gocui.ModNone, quit)
+  set_keybind(g, "", gocui.KeyTab, gocui.ModNone, nextView)
+  set_keybind(g, "PacketDetail", gocui.KeySpace, gocui.ModNone, openclose_detail_pane)
+  set_keybind(g, "", ':', gocui.ModNone, enterCmdMode)
+  set_keybind(g, "CommandBar", gocui.KeyEnter, gocui.ModNone, CmdExec)
 
   go cgocuishark.Init(os.Args)
   go frontend_loop(g)
@@ -42,6 +50,14 @@ func main() {
   }
 }
 
+func set_keybind(g *gocui.Gui, viewname string,
+         key interface{}, mod gocui.Modifier,
+         handler func(*gocui.Gui, *gocui.View) error) {
+  err := g.SetKeybinding(viewname, key, mod, handler)
+  if err != nil {
+    log.Panicln(err)
+  }
+}
 
 func frontend_loop(g *gocui.Gui) {
 
@@ -130,20 +146,41 @@ func show_packet_detail(g *gocui.Gui, idx int) {
 }
 
 func openclose_detail_pane(g *gocui.Gui, v *gocui.View) error {
-  v1, _ := g.View("v1")
-  _, v1_oy := v1.Origin()
-  _, v1_y := v1.Cursor()
-  v1_idx := v1_y + v1_oy;
-  pkt := packets[v1_idx]
+  list, _ := g.View("PacketList")
+  _, list_oy := list.Origin()
+  _, list_y := list.Cursor()
+  list_idx := list_y + list_oy;
+  pkt := packets[list_idx]
   root_node := pkt.Node()
 
-  view, _ := g.View("v2")
-  _, v2_oy := view.Origin()
-  _, v2_y := view.Cursor()
-  v2_idx := v2_y + v2_oy;
-
-  cur_node := root_node.Search(v2_idx)
+  detail, _ := g.View("PacketDetail")
+  _, detail_oy := detail.Origin()
+  _, detail_y := detail.Cursor()
+  detail_idx := detail_y + detail_oy;
+  cur_node := root_node.Search(detail_idx)
   cur_node.IsOpenSwitch()
   return nil
+}
+
+func enterCmdMode(g *gocui.Gui, v *gocui.View) error {
+  view, err := g.SetCurrentView("CommandBar")
+  if err != nil {
+    log.Panicln(err)
+  }
+  view.Clear()
+  fmt.Fprintf(view, ":")
+  view.SetCursor(1, 0)
+  return nil
+}
+
+func CmdExec(g *gocui.Gui, v *gocui.View) error {
+  g.SetCurrentView("CommandBar")
+  view, _ := g.View("CommandBar")
+  cmdstr := view.Buffer()
+  cmdstr = cmdstr[1:len(cmdstr)-1]
+  view.Clear()
+  fmt.Fprintf(view, "-EXEC-[%s]", cmdstr);
+  g.SetCurrentView("PacketList")
+  return commandexec(g, cmdstr)
 }
 
