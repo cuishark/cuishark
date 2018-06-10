@@ -7,6 +7,8 @@ This verison can use the wireshark's dissector with cuishark's Rich UI.
 You can analize many-many protocol's using JUST-CUI!!!.
 Packet makes us very happy.
 
+![](misc/cuishark.png)
+
 ## Required Packages
 
 - Install libcuishark (https://github.com/cuishark/libcuishark)
