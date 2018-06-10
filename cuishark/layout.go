@@ -99,4 +99,3 @@ func update_CommandBar(g *gocui.Gui) {
 }
 
 
-
