@@ -9,6 +9,12 @@ import (
   "github.com/cuishark/cuishark/cgocuishark"
 )
 
+func back() {
+  cgocuishark.Init(os.Args)
+  cgocuishark.Capture()
+}
+
+
 func main() {
   g, err := gocui.NewGui(gocui.OutputNormal)
   if err != nil {
@@ -42,12 +48,13 @@ func main() {
   set_keybind(g, "", ':', gocui.ModNone, enterCmdMode)
   set_keybind(g, "CommandBar", gocui.KeyEnter, gocui.ModNone, CmdExec)
 
-  go cgocuishark.Init(os.Args)
+  go back()
   go frontend_loop(g)
 
   if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
     log.Panicln(err)
   }
+  // cgocuishark.Fini()
 }
 
 func set_keybind(g *gocui.Gui, viewname string,

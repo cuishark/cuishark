@@ -84,7 +84,20 @@ func Init(args []string) {
     argv[i] = C.CString(arg)
   }
 
-  go C.cuishark_init(argc, (**C.char)(&argv[0]))
+  C.cuishark_init(argc, (**C.char)(&argv[0]))
+}
+
+func Capture() {
+  C.cuishark_capture()
+}
+
+func Fini() {
+  C.cuishark_fini()
+}
+
+func ApplyDfilter(filter string) {
+  cstr := C.CString(filter)
+  C.cuishark_apply_dfilter(cstr)
 }
 
 func LoopRunning() bool {
