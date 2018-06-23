@@ -122,4 +122,12 @@ func GetInterfaceName() string {
   return C.GoString(cstr)
 }
 
+func PacketsDump() {
+  C.cuishark_packets_dump()
+}
+
+func StatusDump() {
+  C.cuishark_status_dump()
+}
+
 
