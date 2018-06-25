@@ -1,5 +1,4 @@
-
-
+PREFIX = /usr/local
 
 CXX = g++
 CXXFLAGS += -Wall -Werror
@@ -34,6 +33,7 @@ clean:
 	rm -rf $(TARGET) *.o
 
 install:
-	cp $(TARGET) /usr/local/bin/$(TARGET)
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	cp $(TARGET) $(DESTDIR)$(PREFIX)/bin/$(TARGET)
 
 
