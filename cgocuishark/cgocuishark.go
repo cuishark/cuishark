@@ -7,9 +7,9 @@ package cgocuishark
 #cgo LDFLAGS: -L./lib
 #cgo LDFLAGS: -L/usr/local/lib
 #cgo LDFLAGS: -lcuishark
-#cgo LDFLAGS: -lwireshark -lgmodule-2.0
-#cgo LDFLAGS: -pthread -lgthread-2.0 -pthread -lglib-2.0
-#cgo LDFLAGS: -lwiretap -lwsutil -lz -lm -lpcap -lstdc++
+#cgo LDFLAGS: -pthread -lgthread-2.0 -lglib-2.0 -lgmodule-2.0
+#cgo LDFLAGS: -lwiretap -lwsutil -lwireshark
+#cgo LDFLAGS: -lz -lm -lpcap -lstdc++
 #include <cuishark.h>
 */
 import "C"
