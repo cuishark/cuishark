@@ -1,35 +1,19 @@
 
-# Cuishark
+# Cuishark: Powerful protocol analyzer running on CUI
 
 A protocol analyzer like wireshark on CUI/TUI
 
+![](./cuishark.png)
 
-## Support Interface
-
- - pcap-file
- - network interface
- - PCAP capture filter syntax
-
-
-
-## Usage
-
-running ``cuishark`` prints Usage.
+## Install Cuishark
 
 ```
-$ git clone https://github.com/slankdev/cuishark.git
-$ cd cuishark
-$ make
-$ sudo ./cuishark -i eth0                  // network-interface
-$ sudo ./cuishark -r input.pcap            // pcap-file-interface
-$ sudo ./cuishark -i eth0 -f "tcp port 80" // use pcap-capture-filter
-```
-
-If you like CuiShark, ``sudo make install`` to install to ``/usr/local/bin``.
-
-```
-$ sudo make install   // install
-$ sudo make uninstall // uninstall
+$ go get github.com/cuishark/cuishark
+$ cd $GOPATH/src/github.com/cuishark/cuishark
+$ git checkout -b proto-v0.2.0 origin/proto-v0.2.0
+$ cd $GOPATH/src/github.com/cuishark/cuishark/cgocuishark && go install
+$ cd $GOPATH/src/github.com/cuishark/cuishark/cuishark && go install
+$ sudo cp $GOPATH/bin/cuishark /usr/local/bin
 ```
 
 While running, user can use following commands.
@@ -40,5 +24,15 @@ While running, user can use following commands.
 | k,&lt;up&gt;    | cursor up           |
 | &lt;Tab&gt;     | switch pane         |
 | &lt;Space&gt;   | Open/Close element  |
+
+## Author and License
+
+Author
+- name: Hiroki Shirokura
+- email: slank.dev@gmail.com
+- twitter: @slankdev
+- facebook: hiroki.shirokura
+
+This software is developing under the GPL2.
 
 

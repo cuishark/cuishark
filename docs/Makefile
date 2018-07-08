@@ -1,0 +1,2 @@
+all:
+	mdpreview index.md
