@@ -58,4 +58,13 @@ Author
 
 This software is developing under the GPL2.
 
+## Development Roadmap
+
+- version v0.2.0 (WIP, magred master)
+	- support to read capturefile and network interface
+	- support wireshark's dissector
+	- save displayed packet to the pcap-file
+	- dynamic display filter update
+	- basic character user interface
+
 
