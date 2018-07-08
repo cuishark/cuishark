@@ -10,6 +10,19 @@ analyze many protocol and your network debug makes better with Cuishark.
 
 ## Cuishark makes our network debug more rapidly
 
+Before you use cuishark, if you want to analyze server-side network interface,
+you must login via ssh and capture with some packet capture (ex. tshark and tcpdump).
+And you must forward capture file to your laptop via SCP. Finally you can
+analyze the capture file with wireshrk. like-a above of following image.
+
+Cuishark makes that procedure for analyze server-side network interface better.
+You can analyze directory on target server with cui. You don't need GUI for analysis.
+like-a under of following image.
+
+![](./capturing.png)
+
+You can use powerful UI for prptocol analysis using just CUI. like-a following image.
+
 ![](./screenshot.png)
 
 ## Install Cuishark
