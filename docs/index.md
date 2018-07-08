@@ -1,9 +1,11 @@
 
-# Cuishark: Powerful protocol analyzer running on CUI
-
-A protocol analyzer like wireshark on CUI/TUI
-
 ![](./cuishark.png)
+
+## What's Cuishark?
+
+Cuishark is very-powerful protocol analyzer which has really rich UI.
+And you can use such a rich UI for protocol analysis on just CUI without GUI.
+Cuishark is using libwireshark for the protocol dissection.
 
 ## Install Cuishark
 
