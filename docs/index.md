@@ -1,18 +1,26 @@
 
-![](./cuishark.png)
+![](./logo.png)
 
 ## What's Cuishark?
 
 Cuishark is very-powerful protocol analyzer which has really rich UI.
 And you can use such a rich UI for protocol analysis on just CUI without GUI.
-Cuishark is using libwireshark for the protocol dissection.
+Cuishark is using libwireshark for the protocol dissection, so you can
+analyze many protocol and your network debug makes better with Cuishark.
+
+## Cuishark makes our network debug more rapidly
+
+![](./screenshot.png)
 
 ## Install Cuishark
 
 ```
+$ git clone http://github.com/cuishark/libcuishark
+$ cd libcuishark
+$ ./bootstrap.sh
+$ make && sudo make install
 $ go get github.com/cuishark/cuishark
 $ cd $GOPATH/src/github.com/cuishark/cuishark
-$ git checkout -b proto-v0.2.0 origin/proto-v0.2.0
 $ cd $GOPATH/src/github.com/cuishark/cuishark/cgocuishark && go install
 $ cd $GOPATH/src/github.com/cuishark/cuishark/cuishark && go install
 $ sudo cp $GOPATH/bin/cuishark /usr/local/bin
