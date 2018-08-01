@@ -5,7 +5,7 @@ This is cuishark's versin 2.0 prototype.
 The old version of cuishark was fullscrached and not using wireshark's dissector.
 This verison can use the wireshark's dissector with cuishark's Rich UI.
 You can analize many-many protocol's using JUST-CUI!!!.
-Packet makes us very happy.
+Packet makes us very happy. here is demo video (https://youtu.be/k0NGnIyZrqk).
 
 ![](misc/cuishark.png)
 
