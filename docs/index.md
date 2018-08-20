@@ -32,11 +32,14 @@ $ git clone http://github.com/cuishark/libcuishark
 $ cd libcuishark
 $ ./bootstrap.sh
 $ make && sudo make install
-$ go get github.com/cuishark/cuishark
-$ cd $GOPATH/src/github.com/cuishark/cuishark
-$ cd $GOPATH/src/github.com/cuishark/cuishark/cgocuishark && go install
-$ cd $GOPATH/src/github.com/cuishark/cuishark/cuishark && go install
+$ go get github.com/cuishark/cuishark/cuishark
 $ sudo cp $GOPATH/bin/cuishark /usr/local/bin
+```
+
+Also, you can test it on docker. This may be easiest way.
+```
+$ docker run -it --net=host slankdev/cuishark2
+root@ubuntu-xenial:/# cuishark -i eth0
 ```
 
 While running, user can use following commands.
