@@ -25,6 +25,16 @@ You can use powerful UI for prptocol analysis using just CUI. like-a following i
 
 ![](./screenshot.png)
 
+## Let's Try it on Docker
+
+```
+$ docker run -it slankdev/cuishark2
+root@c25467cc4f10# cd /root/go/src/github.com/cuishark/cuishark/misc
+root@c25467cc4f10# cuishark -r vlan.pcap
+```
+
+You can quit from cuishark with enter the ``:quit<CR>`` as well as vim.
+
 ## Install Cuishark
 
 ```
