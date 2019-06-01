@@ -1,10 +1,10 @@
 
 # Cuishark
 
-This is cuishark's versin 2.0 prototype.
+This is cuishark's version 2.0 prototype.
 The old version of cuishark was fullscrached and not using wireshark's dissector.
-This verison can use the wireshark's dissector with cuishark's Rich UI.
-You can analize many-many protocol's using JUST-CUI!!!.
+This version can use the wireshark's dissector with cuishark's Rich UI.
+You can analize many-many protocols using JUST-CUI!!!.
 Packet makes us very happy. here is demo video (https://youtu.be/k0NGnIyZrqk).
 
 ![](misc/cuishark.png)
@@ -33,5 +33,5 @@ Author
 - twitter: @slankdev
 - facebook: hiroki.shirokura
 
-This software is developing under the GPL2.
+This software is being developpped under the GPL2.
 
